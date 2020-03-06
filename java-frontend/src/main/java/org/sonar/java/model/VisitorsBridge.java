@@ -57,6 +57,7 @@ import org.sonar.java.se.SymbolicExecutionMode;
 import org.sonar.java.se.SymbolicExecutionVisitor;
 import org.sonar.java.se.xproc.BehaviorCache;
 import org.sonar.plugins.java.api.IssuableSubscriptionVisitor;
+import org.sonar.plugins.java.api.JavaCheck;
 import org.sonar.plugins.java.api.JavaFileScanner;
 import org.sonar.plugins.java.api.JavaFileScannerContext;
 import org.sonar.plugins.java.api.JavaVersion;
@@ -88,11 +89,11 @@ public class VisitorsBridge {
   }
 
   @VisibleForTesting
-  public VisitorsBridge(Iterable visitors, List<File> projectClasspath, @Nullable SonarComponents sonarComponents) {
+  public VisitorsBridge(Iterable<? extends JavaCheck> visitors, List<File> projectClasspath, @Nullable SonarComponents sonarComponents) {
     this(visitors, projectClasspath, sonarComponents, SymbolicExecutionMode.DISABLED);
   }
 
-  public VisitorsBridge(Iterable visitors, List<File> projectClasspath, @Nullable SonarComponents sonarComponents, SymbolicExecutionMode symbolicExecutionMode) {
+  public VisitorsBridge(Iterable<? extends JavaCheck> visitors, List<File> projectClasspath, @Nullable SonarComponents sonarComponents, SymbolicExecutionMode symbolicExecutionMode) {
     this.allScanners = new ArrayList<>();
     for (Object visitor : visitors) {
       if (visitor instanceof JavaFileScanner) {
@@ -126,7 +127,9 @@ public class VisitorsBridge {
   public void visitFile(@Nullable Tree parsedTree) {
     JavaTree.CompilationUnitTreeImpl tree = new JavaTree.CompilationUnitTreeImpl(null, new ArrayList<>(), new ArrayList<>(), null, null);
     boolean fileParsed = parsedTree != null;
-    if (fileParsed && parsedTree.is(Tree.Kind.COMPILATION_UNIT)) {
+    // don't create symbol table for generated files (jsp)
+    boolean isGeneratedFile = currentFile instanceof GeneratedFile;
+    if (fileParsed && parsedTree.is(Tree.Kind.COMPILATION_UNIT) && !isGeneratedFile) {
       tree = (JavaTree.CompilationUnitTreeImpl) parsedTree;
       createSonarSymbolTable(tree);
     }

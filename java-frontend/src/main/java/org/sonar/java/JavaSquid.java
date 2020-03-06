@@ -48,6 +48,7 @@ public class JavaSquid {
 
   private final JavaAstScanner astScanner;
   private final JavaAstScanner astScannerForTests;
+  private final JavaAstScanner astScannerForGeneratedFiles;
 
   public JavaSquid(JavaVersion javaVersion,
     @Nullable SonarComponents sonarComponents, @Nullable Measurer measurer,
@@ -73,6 +74,7 @@ public class JavaSquid {
     }
     List<File> classpath = new ArrayList<>();
     List<File> testClasspath = new ArrayList<>();
+    List<JavaCheck> generatedCodeVisitors;
     if (sonarComponents != null) {
       if(!sonarComponents.isSonarLintContext()) {
         codeVisitors = Iterables.concat(codeVisitors, Arrays.asList(new FileLinesVisitor(sonarComponents), new SyntaxHighlighterVisitor(sonarComponents)));
@@ -81,6 +83,9 @@ public class JavaSquid {
       classpath = sonarComponents.getJavaClasspath();
       testClasspath = sonarComponents.getJavaTestClasspath();
       testCodeVisitors.addAll(sonarComponents.testCheckClasses());
+      generatedCodeVisitors = sonarComponents.generatedCodeVisitors();
+    } else {
+      generatedCodeVisitors = Collections.emptyList();
     }
 
     //AstScanner for main files
@@ -91,10 +96,13 @@ public class JavaSquid {
     astScannerForTests = new JavaAstScanner(sonarComponents);
     astScannerForTests.setVisitorBridge(createVisitorBridge(testCodeVisitors, testClasspath, javaVersion, sonarComponents, SymbolicExecutionMode.DISABLED));
 
+    //AstScanner for generated files
+    astScannerForGeneratedFiles = new JavaAstScanner(sonarComponents);
+    astScannerForGeneratedFiles.setVisitorBridge(createVisitorBridge(generatedCodeVisitors, classpath, javaVersion, sonarComponents, SymbolicExecutionMode.DISABLED));
   }
 
   private static VisitorsBridge createVisitorBridge(
-    Iterable<JavaCheck> codeVisitors, List<File> classpath, JavaVersion javaVersion, @Nullable SonarComponents sonarComponents, SymbolicExecutionMode symbolicExecutionMode) {
+    Iterable<? extends JavaCheck> codeVisitors, List<File> classpath, JavaVersion javaVersion, @Nullable SonarComponents sonarComponents, SymbolicExecutionMode symbolicExecutionMode) {
     VisitorsBridge visitorsBridge = new VisitorsBridge(codeVisitors, classpath, sonarComponents, symbolicExecutionMode);
     visitorsBridge.setJavaVersion(javaVersion);
     return visitorsBridge;
@@ -102,8 +110,13 @@ public class JavaSquid {
 
 
   public void scan(Iterable<InputFile> sourceFiles, Iterable<InputFile> testFiles) {
+    scan(sourceFiles, testFiles, Collections.emptyList());
+  }
+
+  public void scan(Iterable<InputFile> sourceFiles, Iterable<InputFile> testFiles, List<InputFile> generatedFiles) {
     scanSources(sourceFiles);
     scanTests(testFiles);
+    scanGeneratedFiles(generatedFiles);
   }
 
   private void scanSources(Iterable<InputFile> sourceFiles) {
@@ -115,6 +128,12 @@ public class JavaSquid {
   private void scanTests(Iterable<InputFile> testFiles) {
     Profiler profiler = Profiler.create(LOG).startInfo("Java Test Files AST scan");
     astScannerForTests.scan(testFiles);
+    profiler.stopInfo();
+  }
+
+  private void scanGeneratedFiles(List<InputFile> generatedFiles) {
+    Profiler profiler = Profiler.create(LOG).startInfo("Java Generated Files AST scan");
+    astScannerForGeneratedFiles.scan(generatedFiles);
     profiler.stopInfo();
   }
 

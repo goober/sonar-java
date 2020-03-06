@@ -31,6 +31,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
 import java.util.Scanner;
+import java.util.stream.Collectors;
 import javax.annotation.Nullable;
 import org.sonar.api.SonarProduct;
 import org.sonar.api.batch.ScannerSide;
@@ -48,6 +49,7 @@ import org.sonar.api.measures.FileLinesContextFactory;
 import org.sonar.api.measures.Metric;
 import org.sonar.api.rule.RuleKey;
 import org.sonar.plugins.java.api.CheckRegistrar;
+import org.sonar.plugins.java.api.GeneratedCodeVisitor;
 import org.sonar.plugins.java.api.JavaCheck;
 import org.sonarsource.api.sonarlint.SonarLintSide;
 
@@ -191,6 +193,13 @@ public class SonarComponents {
       }
     }
     return visitors;
+  }
+
+  public List<JavaCheck> generatedCodeVisitors() {
+    return allChecks.stream()
+      .flatMap(c -> c.all().stream())
+      .filter(check -> check instanceof GeneratedCodeVisitor)
+      .collect(Collectors.toList());
   }
 
   public RuleKey getRuleKey(JavaCheck check) {
