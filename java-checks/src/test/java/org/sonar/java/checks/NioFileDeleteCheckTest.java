@@ -31,7 +31,7 @@ public class NioFileDeleteCheckTest {
 
   @Test
   public void no_issue_with_version_6() {
-    JavaCheckVerifier.verifyNoIssue("src/test/files/checks/NioFileDeleteCheck.java", new NioFileDeleteCheck(), 6);
+    JavaCheckVerifier.verifyNoIssue("src/test/files/checks/NioFileDeleteCheck_java6.java", new NioFileDeleteCheck(), 6);
   }
 
 }

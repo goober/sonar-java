@@ -34,7 +34,7 @@ public class JdbcDriverExplicitLoadingCheckTest {
 
   @Test
   public void java5() {
-    JavaCheckVerifier.verifyNoIssue(FILENAME, new JdbcDriverExplicitLoadingCheck(), 5);
+    JavaCheckVerifier.verifyNoIssue("src/test/files/checks/JdbcDriverExplicitLoadingCheck_java5.java", new JdbcDriverExplicitLoadingCheck(), 5);
   }
 
   @Test

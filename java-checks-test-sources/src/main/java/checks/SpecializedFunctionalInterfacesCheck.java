@@ -233,7 +233,7 @@ public class SpecializedFunctionalInterfacesCheck {
     }
   }
 
-  static class MySupplier3 implements Supplier<Integer>, Runnable, Consumer<Double> { // Noncompliant [[sc=16;ec=27;secondary=236, 236]] {{Refactor this code to use the more specialised Functional Interfaces 'IntSupplier', 'DoubleConsumer'}}
+  static class MySupplier3 implements Supplier<Integer>, Runnable, Consumer<Double> { // Noncompliant [[sc=16;ec=27;secondary=236,236]] {{Refactor this code to use the more specialised Functional Interfaces 'IntSupplier', 'DoubleConsumer'}}
     Supplier<Integer> mySupplier = new MySupplier2(); // Compliant
 
     @Override

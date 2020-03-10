@@ -31,7 +31,7 @@ public class ValueBasedObjectUsedForLockCheckTest {
 
   @Test
   public void no_issue_if_not_java8() {
-    JavaCheckVerifier.verifyNoIssue("src/test/files/checks/synchronization/ValueBasedObjectUsedForLockCheck.java", new ValueBasedObjectUsedForLockCheck(), 7);
+    JavaCheckVerifier.verifyNoIssue("src/test/files/checks/synchronization/ValueBasedObjectUsedForLockCheck_java8.java", new ValueBasedObjectUsedForLockCheck(), 7);
   }
 
 }

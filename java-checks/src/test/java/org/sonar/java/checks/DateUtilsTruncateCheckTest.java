@@ -26,16 +26,14 @@ import static org.sonar.java.CheckTestUtils.testSourcesPath;
 
 public class DateUtilsTruncateCheckTest {
 
-  private static final String FILENAME = testSourcesPath("checks/DateUtilsTruncateCheck.java");
-
   @Test
   public void java8() {
-    JavaCheckVerifier.verify(FILENAME, new DateUtilsTruncateCheck(), 8);
+    JavaCheckVerifier.verify(testSourcesPath("checks/DateUtilsTruncateCheck.java"), new DateUtilsTruncateCheck(), 8);
   }
 
   @Test
   public void java7() {
-    JavaCheckVerifier.verifyNoIssue(FILENAME, new DateUtilsTruncateCheck(), 7);
+    JavaCheckVerifier.verifyNoIssue(testSourcesPath("checks/DateUtilsTruncateCheck_java7.java"), new DateUtilsTruncateCheck(), 7);
   }
 
   @Test

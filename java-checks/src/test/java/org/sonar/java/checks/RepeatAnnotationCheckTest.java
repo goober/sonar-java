@@ -24,16 +24,14 @@ import org.sonar.java.checks.verifier.JavaCheckVerifier;
 
 public class RepeatAnnotationCheckTest {
 
-  private static final String FILENAME = "src/test/files/checks/RepeatAnnotationCheck.java";
-
   @Test
   public void java8() {
-    JavaCheckVerifier.verify(FILENAME, new RepeatAnnotationCheck(), 8);
+    JavaCheckVerifier.verify("src/test/files/checks/RepeatAnnotationCheck.java", new RepeatAnnotationCheck(), 8);
   }
 
   @Test
   public void java7() {
-    JavaCheckVerifier.verifyNoIssue(FILENAME, new RepeatAnnotationCheck(), 7);
+    JavaCheckVerifier.verifyNoIssue("src/test/files/checks/RepeatAnnotationCheck_java7.java", new RepeatAnnotationCheck(), 7);
   }
 
   @Test

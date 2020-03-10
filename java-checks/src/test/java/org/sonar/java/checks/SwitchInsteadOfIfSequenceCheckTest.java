@@ -30,7 +30,7 @@ public class SwitchInsteadOfIfSequenceCheckTest {
   }
 
   @Test
-  public void prior_java_7() throws Exception {
-    JavaCheckVerifier.verifyNoIssue("src/test/files/checks/SwitchInsteadOfIfSequenceCheck.java", new SwitchInsteadOfIfSequenceCheck(), 6);
+  public void prior_java_6() throws Exception {
+    JavaCheckVerifier.verifyNoIssue("src/test/files/checks/SwitchInsteadOfIfSequenceCheck_java6.java", new SwitchInsteadOfIfSequenceCheck(), 6);
   }
 }

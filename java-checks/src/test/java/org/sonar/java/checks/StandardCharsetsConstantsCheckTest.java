@@ -32,7 +32,7 @@ public class StandardCharsetsConstantsCheckTest {
     JavaCheckVerifier.verify(testSourcesPath("checks/StandardCharsetsConstantsCheck.java"), new StandardCharsetsConstantsCheck(), 7);
     JavaCheckVerifier.verify(testSourcesPath("checks/StandardCharsetsConstantsCheck_java8.java"), new StandardCharsetsConstantsCheck(), 8);
     JavaCheckVerifier.verify("src/test/files/checks/StandardCharsetsConstantsCheck_java10.java", new StandardCharsetsConstantsCheck(), 10);
-    JavaCheckVerifier.verifyNoIssue(testSourcesPath("checks/StandardCharsetsConstantsCheck.java"), new StandardCharsetsConstantsCheck(), 6);
+    JavaCheckVerifier.verifyNoIssue(testSourcesPath("checks/StandardCharsetsConstantsCheck_java6.java"), new StandardCharsetsConstantsCheck(), 6);
     JavaCheckVerifier.verifyNoIssueWithoutSemantic(testSourcesPath("checks/StandardCharsetsConstantsCheck.java"), new StandardCharsetsConstantsCheck());
   }
 
