@@ -17,15 +17,35 @@
  * along with this program; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
-package org.sonar.java.se.checks;
+package org.sonar.java.testing;
 
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.List;
 import org.junit.Test;
-import org.sonar.java.testing.SEJavaCheckVerifier;
+import org.junit.rules.TemporaryFolder;
 
-public class InvariantReturnCheckTest {
+import static org.assertj.core.api.Assertions.assertThat;
+
+public class FilesUtilsTest {
+  @org.junit.Rule
+  public TemporaryFolder temp = new TemporaryFolder();
 
   @Test
-  public void test() {
-    SEJavaCheckVerifier.verify("src/test/files/se/InvariantReturnCheck.java", new InvariantReturnCheck());
+  public void verify_get_classpath_files() throws IOException {
+    Path tmp = temp.newFolder().toPath();
+    Path jar = tmp.resolve("test.jar");
+    Path zip = tmp.resolve("test.zip");
+    Path invalid = tmp.resolve("test.txt");
+
+    Files.createFile(jar);
+    Files.createFile(zip);
+    Files.createFile(invalid);
+
+    List<File> list = FilesUtils.getFilesRecursively(temp.getRoot().toPath(), new String[] {"zip", "jar"});
+    assertThat(list).containsOnly(jar.toFile(), zip.toFile());
   }
+
 }

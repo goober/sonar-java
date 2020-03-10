@@ -20,48 +20,48 @@
 package org.sonar.java.se.checks;
 
 import org.junit.Test;
-import org.sonar.java.se.JavaCheckVerifier;
+import org.sonar.java.testing.SEJavaCheckVerifier;
 
 public class XxeProcessingCheckTest {
 
   @Test
   public void Xml_input_factory() {
-    JavaCheckVerifier.verify("src/test/files/se/XxeProcessingCheck_XmlInputFactory.java", new XxeProcessingCheck());
+    SEJavaCheckVerifier.verify("src/test/files/se/XxeProcessingCheck_XmlInputFactory.java", new XxeProcessingCheck());
   }
 
   @Test
   public void document_builder_factory() {
-    JavaCheckVerifier.verify("src/test/files/se/XxeProcessingCheck_DocumentBuilderFactory.java", new XxeProcessingCheck());
+    SEJavaCheckVerifier.verify("src/test/files/se/XxeProcessingCheck_DocumentBuilderFactory.java", new XxeProcessingCheck());
   }
 
   @Test
   public void sax_parser() {
-    JavaCheckVerifier.verify("src/test/files/se/XxeProcessingCheck_SaxParser.java", new XxeProcessingCheck());
+    SEJavaCheckVerifier.verify("src/test/files/se/XxeProcessingCheck_SaxParser.java", new XxeProcessingCheck());
   }
 
   @Test
   public void schema_factory() {
-    JavaCheckVerifier.verify("src/test/files/se/XxeProcessingCheck_SchemaFactory_Validator.java", new XxeProcessingCheck());
+    SEJavaCheckVerifier.verify("src/test/files/se/XxeProcessingCheck_SchemaFactory_Validator.java", new XxeProcessingCheck());
   }
 
   @Test
   public void transformer_factory() {
-    JavaCheckVerifier.verify("src/test/files/se/XxeProcessingCheck_TransformerFactory.java", new XxeProcessingCheck());
+    SEJavaCheckVerifier.verify("src/test/files/se/XxeProcessingCheck_TransformerFactory.java", new XxeProcessingCheck());
   }
 
   @Test
   public void xml_reader() {
-    JavaCheckVerifier.verify("src/test/files/se/XxeProcessingCheck_XmlReader.java", new XxeProcessingCheck());
+    SEJavaCheckVerifier.verify("src/test/files/se/XxeProcessingCheck_XmlReader.java", new XxeProcessingCheck());
   }
 
   @Test
   public void sax_builder() {
-    JavaCheckVerifier.verify("src/test/files/se/XxeProcessingCheck_SaxBuilder.java", new XxeProcessingCheck());
+    SEJavaCheckVerifier.verify("src/test/files/se/XxeProcessingCheck_SaxBuilder.java", new XxeProcessingCheck());
   }
 
   @Test
   public void sax_reader() {
-    JavaCheckVerifier.verify("src/test/files/se/XxeProcessingCheck_SaxReader.java", new XxeProcessingCheck());
+    SEJavaCheckVerifier.verify("src/test/files/se/XxeProcessingCheck_SaxReader.java", new XxeProcessingCheck());
   }
 
 }

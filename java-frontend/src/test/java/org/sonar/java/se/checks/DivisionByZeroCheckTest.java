@@ -21,14 +21,12 @@ package org.sonar.java.se.checks;
 
 import com.google.common.collect.Iterables;
 import org.junit.Test;
-
-import org.sonar.java.se.JavaCheckVerifier;
 import org.sonar.java.se.ProgramState;
 import org.sonar.java.se.constraint.BooleanConstraint;
 import org.sonar.java.se.symbolicvalues.RelationalSymbolicValue;
 import org.sonar.java.se.symbolicvalues.SymbolicValue;
 import org.sonar.java.se.symbolicvalues.SymbolicValueTestUtil;
-
+import org.sonar.java.testing.SEJavaCheckVerifier;
 import javax.annotation.Nullable;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -43,12 +41,12 @@ public class DivisionByZeroCheckTest {
 
   @Test
   public void test() {
-    JavaCheckVerifier.verify("src/test/files/se/DivisionByZeroCheck.java", new DivisionByZeroCheck());
+    SEJavaCheckVerifier.verify("src/test/files/se/DivisionByZeroCheck.java", new DivisionByZeroCheck());
   }
 
   @Test
   public void invocation_leading_to_ArithmeticException() {
-    JavaCheckVerifier.verify("src/test/files/se/MethodInvocationLeadingToArithmeticException.java", new DivisionByZeroCheck());
+    SEJavaCheckVerifier.verify("src/test/files/se/MethodInvocationLeadingToArithmeticException.java", new DivisionByZeroCheck());
   }
 
   @Test

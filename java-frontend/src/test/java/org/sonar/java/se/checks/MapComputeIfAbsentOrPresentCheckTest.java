@@ -20,11 +20,11 @@
 package org.sonar.java.se.checks;
 
 import org.junit.Test;
-import org.sonar.java.se.JavaCheckVerifier;
+import org.sonar.java.testing.SEJavaCheckVerifier;
 
 public class MapComputeIfAbsentOrPresentCheckTest {
   @Test
   public void test() {
-    JavaCheckVerifier.verify("src/test/files/se/MapComputeIfAbsentOrPresentCheck.java", new MapComputeIfAbsentOrPresentCheck());
+    SEJavaCheckVerifier.verify("src/test/files/se/MapComputeIfAbsentOrPresentCheck.java", new MapComputeIfAbsentOrPresentCheck());
   }
 }

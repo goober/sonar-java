@@ -20,13 +20,13 @@
 package org.sonar.java.se.checks.debug;
 
 import org.junit.Test;
-import org.sonar.java.se.JavaCheckVerifier;
+import org.sonar.java.testing.SEJavaCheckVerifier;
 
 public class DebugMethodYieldsOnInvocationsCheckTest {
 
   @Test
   public void test() {
-    JavaCheckVerifier.verify("src/test/files/se/debug/DebugMethodYieldsOnInvocationsCheck.java", new DebugMethodYieldsOnInvocationsCheck());
+    SEJavaCheckVerifier.verify("src/test/files/se/debug/DebugMethodYieldsOnInvocationsCheck.java", new DebugMethodYieldsOnInvocationsCheck());
   }
 
   @Test

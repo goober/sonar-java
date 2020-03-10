@@ -17,15 +17,5 @@
  * along with this program; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
-package org.sonar.java.se.checks;
-
-import org.junit.Test;
-import org.sonar.java.testing.SEJavaCheckVerifier;
-
-public class InvariantReturnCheckTest {
-
-  @Test
-  public void test() {
-    SEJavaCheckVerifier.verify("src/test/files/se/InvariantReturnCheck.java", new InvariantReturnCheck());
-  }
-}
+@javax.annotation.ParametersAreNonnullByDefault
+package org.sonar.java.testing;

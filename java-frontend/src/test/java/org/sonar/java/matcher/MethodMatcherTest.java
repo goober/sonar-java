@@ -34,7 +34,7 @@ import org.sonar.java.ast.JavaAstScanner;
 import org.sonar.java.ast.visitors.SubscriptionVisitor;
 import org.sonar.java.model.JavaTree;
 import org.sonar.java.model.VisitorsBridge;
-import org.sonar.java.se.JavaCheckVerifier;
+import org.sonar.java.testing.SEJavaCheckVerifier;
 import org.sonar.plugins.java.api.IssuableSubscriptionVisitor;
 import org.sonar.plugins.java.api.semantic.Symbol;
 import org.sonar.plugins.java.api.tree.IdentifierTree;
@@ -242,7 +242,7 @@ public class MethodMatcherTest {
     matches.put(vanilla, new ArrayList<>());
     matches.put(copyInt, new ArrayList<>());
     matches.put(copyString, new ArrayList<>());
-    JavaCheckVerifier.verifyNoIssue("src/test/files/matcher/Copy.java", new IssuableSubscriptionVisitor() {
+    SEJavaCheckVerifier.verifyNoIssue("src/test/files/matcher/Copy.java", new IssuableSubscriptionVisitor() {
       @Override
       public List<Tree.Kind> nodesToVisit() {
         return Collections.singletonList(Tree.Kind.METHOD);

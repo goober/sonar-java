@@ -20,12 +20,12 @@
 package org.sonar.java.se.checks;
 
 import org.junit.Test;
-import org.sonar.java.se.JavaCheckVerifier;
+import org.sonar.java.testing.SEJavaCheckVerifier;
 
 public class NoWayOutLoopCheckTest {
 
   @Test
   public void test() {
-    JavaCheckVerifier.verify("src/test/files/se/NoWayOutLoopCheck.java", new NoWayOutLoopCheck());
+    SEJavaCheckVerifier.verify("src/test/files/se/NoWayOutLoopCheck.java", new NoWayOutLoopCheck());
   }
 }

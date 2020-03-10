@@ -40,7 +40,6 @@ import org.sonar.api.utils.log.LoggerLevel;
 import org.sonar.java.model.InternalSyntaxToken;
 import org.sonar.java.model.expression.BinaryExpressionTreeImpl;
 import org.sonar.java.resolve.Symbols;
-import org.sonar.java.se.JavaCheckVerifier;
 import org.sonar.java.se.ProgramState;
 import org.sonar.java.se.SETestUtils;
 import org.sonar.java.se.checks.DivisionByZeroCheck;
@@ -49,6 +48,7 @@ import org.sonar.java.se.constraint.BooleanConstraint;
 import org.sonar.java.se.constraint.ConstraintManager;
 import org.sonar.java.se.constraint.ConstraintsByDomain;
 import org.sonar.java.se.constraint.ObjectConstraint;
+import org.sonar.java.testing.SEJavaCheckVerifier;
 import org.sonar.plugins.java.api.semantic.Symbol;
 import org.sonar.plugins.java.api.tree.ExpressionTree;
 import org.sonar.plugins.java.api.tree.Tree;
@@ -386,7 +386,7 @@ public class RelationalSymbolicValueTest {
   @Test
   public void relationships_transitivity_should_take_known_relationships_into_account() throws Exception {
     // Testcase in that file can fail with a stackoverflow if known relations in program state are not taken into account.
-    JavaCheckVerifier.verifyNoIssue("src/test/files/se/InifiniteTransitiveRelationshipConstraintCopy.java", new NullDereferenceCheck());
+    SEJavaCheckVerifier.verifyNoIssue("src/test/files/se/InifiniteTransitiveRelationshipConstraintCopy.java", new NullDereferenceCheck());
   }
 
   private void assertNullConstraint(ProgramState ps, SymbolicValue sv) {
@@ -502,7 +502,7 @@ public class RelationalSymbolicValueTest {
 
   @Test
   public void recursion_on_copy_constraint_should_stop() throws Exception {
-    JavaCheckVerifier.verifyNoIssue("src/test/files/se/RelationSV.java", new NullDereferenceCheck());
+    SEJavaCheckVerifier.verifyNoIssue("src/test/files/se/RelationSV.java", new NullDereferenceCheck());
   }
 
   @Test

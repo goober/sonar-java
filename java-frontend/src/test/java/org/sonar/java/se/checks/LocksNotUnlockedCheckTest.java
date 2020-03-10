@@ -20,7 +20,7 @@
 package org.sonar.java.se.checks;
 
 import org.junit.Test;
-import org.sonar.java.se.JavaCheckVerifier;
+import org.sonar.java.testing.SEJavaCheckVerifier;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -28,12 +28,12 @@ public class LocksNotUnlockedCheckTest {
 
   @Test
   public void test() {
-    JavaCheckVerifier.verify("src/test/files/se/LocksNotUnlockedCheck.java", new LocksNotUnlockedCheck());
+    SEJavaCheckVerifier.verify("src/test/files/se/LocksNotUnlockedCheck.java", new LocksNotUnlockedCheck());
   }
 
   @Test
   public void object_constraint_cache_issues() throws Exception {
-    JavaCheckVerifier.verify("src/test/files/se/LocksNotUnlockedCheckCache.java", new LocksNotUnlockedCheck());
+    SEJavaCheckVerifier.verify("src/test/files/se/LocksNotUnlockedCheckCache.java", new LocksNotUnlockedCheck());
   }
 
   @Test

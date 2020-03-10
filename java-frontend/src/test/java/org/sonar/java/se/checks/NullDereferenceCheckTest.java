@@ -20,52 +20,52 @@
 package org.sonar.java.se.checks;
 
 import org.junit.Test;
-import org.sonar.java.se.JavaCheckVerifier;
+import org.sonar.java.testing.SEJavaCheckVerifier;
 
 public class NullDereferenceCheckTest {
 
   @Test
   public void test() {
-    JavaCheckVerifier.verify("src/test/files/se/NullDereferenceCheck.java", new NullDereferenceCheck());
+    SEJavaCheckVerifier.verify("src/test/files/se/NullDereferenceCheck.java", new NullDereferenceCheck());
   }
 
   @Test
   public void objectsMethodsTest() {
-    JavaCheckVerifier.verify("src/test/files/se/ObjectsMethodsTest.java", new NullDereferenceCheck());
+    SEJavaCheckVerifier.verify("src/test/files/se/ObjectsMethodsTest.java", new NullDereferenceCheck());
   }
 
   @Test
   public void null_array_access() {
-    JavaCheckVerifier.verify("src/test/files/se/NullArrayAccess.java", new NullDereferenceCheck());
+    SEJavaCheckVerifier.verify("src/test/files/se/NullArrayAccess.java", new NullDereferenceCheck());
   }
 
   @Test
   public void chained_method_invocation_issue_order() {
-    JavaCheckVerifier.verify("src/test/files/se/MethodParamInvocationOrder.java", new NullDereferenceCheck());
+    SEJavaCheckVerifier.verify("src/test/files/se/MethodParamInvocationOrder.java", new NullDereferenceCheck());
   }
 
   @Test
   public void invocation_leading_to_NPE() {
-    JavaCheckVerifier.verify("src/test/files/se/MethodInvocationLeadingToNPE.java", new NullDereferenceCheck());
+    SEJavaCheckVerifier.verify("src/test/files/se/MethodInvocationLeadingToNPE.java", new NullDereferenceCheck());
   }
 
   @Test
   public void reporting_test() {
-    JavaCheckVerifier.verify("src/test/files/se/NPE_reporting.java", new NullDereferenceCheck());
+    SEJavaCheckVerifier.verify("src/test/files/se/NPE_reporting.java", new NullDereferenceCheck());
   }
 
   @Test
   public void ruling() {
-    JavaCheckVerifier.verifyNoIssue("src/test/files/se/NPEwithZeroTests.java", new NullDereferenceCheck());
+    SEJavaCheckVerifier.verifyNoIssue("src/test/files/se/NPEwithZeroTests.java", new NullDereferenceCheck());
   }
 
   @Test
   public void test_deferred_reporting() throws Exception {
-    JavaCheckVerifier.verify("src/test/files/se/NPE_deferred.java", new NullDereferenceCheck());
+    SEJavaCheckVerifier.verify("src/test/files/se/NPE_deferred.java", new NullDereferenceCheck());
   }
 
   @Test
   public void test_npe_transitive() throws Exception {
-    JavaCheckVerifier.verify("src/test/files/se/NPE_transitive.java", new NullDereferenceCheck());
+    SEJavaCheckVerifier.verify("src/test/files/se/NPE_transitive.java", new NullDereferenceCheck());
   }
 }

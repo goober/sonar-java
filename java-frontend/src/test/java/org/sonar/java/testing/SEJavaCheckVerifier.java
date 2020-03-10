@@ -17,13 +17,13 @@
  * along with this program; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
-package org.sonar.java.checks.verifier;
+package org.sonar.java.testing;
 
 import com.google.common.annotations.Beta;
 import java.io.File;
 import java.util.Collection;
+import org.sonar.java.se.SETestUtils;
 import org.sonar.java.testing.CheckVerifier;
-import org.sonar.java.testing.FilesUtils;
 import org.sonar.plugins.java.api.JavaFileScanner;
 
 /**
@@ -48,62 +48,25 @@ import org.sonar.plugins.java.api.JavaFileScanner;
  * </ul>
  */
 @Beta
-public final class JavaCheckVerifier {
-
-  private JavaCheckVerifier() {
-  }
+public class SEJavaCheckVerifier {
 
   /**
    * Verifies that the provided file will raise all the expected issues when analyzed with the given check.
    *
    * <br /><br />
    *
-   * By default, any jar or zip archive present in the folder defined by {@link JavaCheckVerifier#DEFAULT_TEST_JARS_DIRECTORY} will be used
+   * By default, any jar or zip archive present in the folder defined by {@link SEJavaCheckVerifier#DEFAULT_TEST_JARS_DIRECTORY} will be used
    * to add extra classes to the classpath. If this folder is empty or does not exist, then the analysis will be based on the source of
    * the provided file.
    *
    * @param filename The file to be analyzed
    * @param check The check to be used for the analysis
    */
-  public static void verify(String filename, JavaFileScanner check) {
+  public static void verify(String filename, JavaFileScanner... check) {
     CheckVerifier.newVerifier()
       .onFile(filename)
-      .withCheck(check)
-      .verifyIssues();
-  }
-
-  /**
-   * Verifies that the provided file will raise all the expected issues when analyzed with the given multiple checks.
-   *
-   * <br /><br />
-   *
-   * By default, any jar or zip archive present in the folder defined by {@link JavaCheckVerifier#DEFAULT_TEST_JARS_DIRECTORY} will be used
-   * to add extra classes to the classpath. If this folder is empty or does not exist, then the analysis will be based on the source of
-   * the provided file.
-   *
-   * @param filename The file to be analyzed
-   * @param checks The multiple checks to be used for the analysis
-   */
-  public static void verify(String filename, JavaFileScanner... checks) {
-    CheckVerifier.newVerifier()
-      .onFile(filename)
-      .withChecks(checks)
-      .verifyIssues();
-  }
-
-  /**
-   * Verifies that the provided file will raise all the expected issues when analyzed with the given check and a given
-   * java version used for the sources.
-   *
-   * @param filename The file to be analyzed
-   * @param check The check to be used for the analysis
-   * @param javaVersion The version to consider for the analysis (6 for java 1.6, 7 for 1.7, etc.)
-   */
-  public static void verify(String filename, JavaFileScanner check, int javaVersion) {
-    CheckVerifier.newVerifier()
-      .onFile(filename)
-      .withCheck(check)
-      .withJavaVersion(javaVersion)
+      .withChecks(check)
+      .withClassPath(SETestUtils.CLASS_PATH)
       .verifyIssues();
   }
 
@@ -124,22 +87,6 @@ public final class JavaCheckVerifier {
   }
 
   /**
-   * Verifies that the provided file will raise all the expected issues when analyzed with the given check,
-   * using jars/zips files from the given directory to extends the classpath.
-   *
-   * @param filename The file to be analyzed
-   * @param check The check to be used for the analysis
-   * @param testJarsDirectory The directory containing jars and/or zip defining the classpath to be used
-   */
-  public static void verify(String filename, JavaFileScanner check, String testJarsDirectory) {
-    CheckVerifier.newVerifier()
-      .onFile(filename)
-      .withCheck(check)
-      .withClassPath(FilesUtils.getClassPath(testJarsDirectory))
-      .verifyIssues();
-  }
-
-  /**
    * Verifies that the provided file will not raise any issue when analyzed with the given check.
    *
    * @param filename The file to be analyzed
@@ -149,38 +96,7 @@ public final class JavaCheckVerifier {
     CheckVerifier.newVerifier()
       .onFile(filename)
       .withCheck(check)
-      .verifyNoIssues();
-  }
-
-  public static void verifyNoIssueWithoutSemantic(String filename, JavaFileScanner check, int javaVersion) {
-    CheckVerifier.newVerifier()
-      .onFile(filename)
-      .withCheck(check)
-      .withJavaVersion(javaVersion)
-      .withoutSemantic()
-      .verifyNoIssues();
-  }
-
-  public static void verifyNoIssueWithoutSemantic(String filename, JavaFileScanner check) {
-    CheckVerifier.newVerifier()
-      .onFile(filename)
-      .withCheck(check)
-      .withoutSemantic()
-      .verifyNoIssues();
-  }
-
-  /**
-   * Verifies that the provided file will not raise any issue when analyzed with the given check.
-   *
-   * @param filename The file to be analyzed
-   * @param check The check to be used for the analysis
-   * @param javaVersion The version to consider for the analysis (6 for java 1.6, 7 for 1.7, etc.)
-   */
-  public static void verifyNoIssue(String filename, JavaFileScanner check, int javaVersion) {
-    CheckVerifier.newVerifier()
-      .onFile(filename)
-      .withCheck(check)
-      .withJavaVersion(javaVersion)
+      .withClassPath(SETestUtils.CLASS_PATH)
       .verifyNoIssues();
   }
 
@@ -195,13 +111,8 @@ public final class JavaCheckVerifier {
     CheckVerifier.newVerifier()
       .onFile(filename)
       .withCheck(check)
+      .withClassPath(SETestUtils.CLASS_PATH)
       .verifyIssueOnFile(message);
   }
 
-  public static void verifyIssueOnProject(String filename, String message, JavaFileScanner check) {
-    CheckVerifier.newVerifier()
-      .onFile(filename)
-      .withCheck(check)
-      .verifyIssueOnProject(message);
-  }
 }

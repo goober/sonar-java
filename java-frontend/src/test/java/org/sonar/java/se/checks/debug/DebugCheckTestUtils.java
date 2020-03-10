@@ -24,10 +24,10 @@ import java.util.Collections;
 import org.sonar.java.bytecode.loader.SquidClassLoader;
 import org.sonar.java.model.Sema;
 import org.sonar.java.se.ExplodedGraphWalker;
-import org.sonar.java.se.JavaCheckVerifier;
 import org.sonar.java.se.SymbolicExecutionVisitor;
 import org.sonar.java.se.checks.SECheck;
 import org.sonar.java.se.xproc.BehaviorCache;
+import org.sonar.java.testing.SEJavaCheckVerifier;
 import org.sonar.plugins.java.api.JavaFileScannerContext;
 
 public final class DebugCheckTestUtils {
@@ -52,6 +52,6 @@ public final class DebugCheckTestUtils {
         check.scanFile(context);
       }
     };
-    JavaCheckVerifier.verify(sourcefile, sev);
+    SEJavaCheckVerifier.verify(sourcefile, sev);
   }
 }

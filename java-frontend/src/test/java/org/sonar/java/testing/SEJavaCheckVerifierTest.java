@@ -17,7 +17,7 @@
  * along with this program; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
-package org.sonar.java.se;
+package org.sonar.java.testing;
 
 import com.google.common.base.Preconditions;
 import com.google.common.collect.LinkedListMultimap;
@@ -33,6 +33,7 @@ import javax.annotation.Nullable;
 import org.assertj.core.api.Fail;
 import org.junit.Test;
 import org.sonar.api.batch.fs.InputFile;
+import org.sonar.check.Rule;
 import org.sonar.java.AnalyzerMessage;
 import org.sonar.java.TestUtils;
 import org.sonar.java.model.InternalSyntaxToken;
@@ -46,7 +47,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.catchThrowable;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-public class JavaCheckVerifierTest {
+public class SEJavaCheckVerifierTest {
 
   private static final String FILENAME_ISSUES = "src/test/files/JavaCheckVerifier.java";
   private static final String FILENAME_NO_ISSUE = "src/test/files/JavaCheckVerifierNoIssue.java";
@@ -60,7 +61,7 @@ public class JavaCheckVerifierTest {
   @Test
   public void verify_line_issues() {
     IssuableSubscriptionVisitor visitor = new FakeVisitor().withDefaultIssues();
-    JavaCheckVerifier.verify("src/test/files/JavaCheckVerifier.java", visitor);
+    SEJavaCheckVerifier.verify("src/test/files/JavaCheckVerifier.java", visitor);
   }
 
   @Test
@@ -68,8 +69,8 @@ public class JavaCheckVerifierTest {
     IssuableSubscriptionVisitor visitor = new FakeVisitor().withDefaultIssues().withIssue(4, "extra message");
 
     try {
-      JavaCheckVerifier.verify(FILENAME_ISSUES, visitor);
-      Fail.fail("");
+      SEJavaCheckVerifier.verify(FILENAME_ISSUES, visitor);
+      Fail.fail("Should have failed");
     } catch (AssertionError e) {
       assertThat(e).hasMessage("Unexpected at [4]");
     }
@@ -80,8 +81,8 @@ public class JavaCheckVerifierTest {
     IssuableSubscriptionVisitor visitor = new FakeVisitor().withDefaultIssues().withIssue(4, "extra message").withoutIssue(1);
 
     try {
-      JavaCheckVerifier.verify(FILENAME_ISSUES, visitor);
-      Fail.fail("");
+      SEJavaCheckVerifier.verify(FILENAME_ISSUES, visitor);
+      Fail.fail("Should have failed");
     } catch (AssertionError e) {
       assertThat(e).hasMessage("Expected at [1], Unexpected at [4]");
     }
@@ -92,8 +93,8 @@ public class JavaCheckVerifierTest {
     IssuableSubscriptionVisitor visitor = new FakeVisitor().withDefaultIssues().withoutIssue(1);
 
     try {
-      JavaCheckVerifier.verify(FILENAME_ISSUES, visitor);
-      Fail.fail("");
+      SEJavaCheckVerifier.verify(FILENAME_ISSUES, visitor);
+      Fail.fail("Should have failed");
     } catch (AssertionError e) {
       assertThat(e).hasMessage("Expected at [1]");
     }
@@ -103,79 +104,39 @@ public class JavaCheckVerifierTest {
   public void verify_issue_on_file() {
     String expectedMessage = "messageOnFile";
     IssuableSubscriptionVisitor visitor = new FakeVisitor().withIssueOnFile(expectedMessage);
-    JavaCheckVerifier.verifyIssueOnFile(FILENAME_ISSUES, expectedMessage, visitor);
+    SEJavaCheckVerifier.verifyIssueOnFile(FILENAME_ISSUES, expectedMessage, visitor);
   }
 
   @Test
   public void verify_issue_on_file_incorrect() {
     assertThrows(AssertionError.class,
-      () -> JavaCheckVerifier.verifyIssueOnFile(FILENAME_ISSUES, "messageOnFile", new FakeVisitor().withDefaultIssues()));
-  }
-
-  @Test
-  public void verify_no_issue_fail_if_noncompliant() {
-    try {
-      JavaCheckVerifier.verifyNoIssue(FILENAME_ISSUES, NO_EFFECT_VISITOR);
-      Fail.fail("");
-    } catch (AssertionError e) {
-      assertThat(e).hasMessage("The file should not declare noncompliants when no issues are expected");
-    }
+      () -> SEJavaCheckVerifier.verifyIssueOnFile(FILENAME_ISSUES, "messageOnFile", new FakeVisitor().withDefaultIssues()));
   }
 
   @Test
   public void verify_no_issue() {
-    JavaCheckVerifier.verifyNoIssue(FILENAME_NO_ISSUE, NO_EFFECT_VISITOR);
+    SEJavaCheckVerifier.verifyNoIssue(FILENAME_NO_ISSUE, NO_EFFECT_VISITOR);
   }
 
   @Test
   public void verify_with_provided_classes() {
     IssuableSubscriptionVisitor visitor = new FakeVisitor().withDefaultIssues();
 
-    JavaCheckVerifier.verify(FILENAME_ISSUES, visitor, new ArrayList<File>());
+    SEJavaCheckVerifier.verify(FILENAME_ISSUES, visitor, new ArrayList<File>());
   }
 
   @Test
   public void verify_with_default_test_jar() throws IOException {
     // This path is the actual test-jars path for this project, as the currently supplied jar doesn't cause any issues in the test file
     // retain the actual folder with contents. This will prevent other tests to fail which rely on the supplied bytecode.
-    JavaCheckVerifier.verifyNoIssue(FILENAME_NO_ISSUE, NO_EFFECT_VISITOR);
-  }
-
-  @Test
-  public void verify_with_provided_test_jar() throws IOException {
-    String testJarsPathname = "target/my-test-jars";
-    File file = new File(testJarsPathname);
-    if (file.exists()) {
-      file.delete();
-    }
-    if (file.mkdir()) {
-      IssuableSubscriptionVisitor visitor = new FakeVisitor().withDefaultIssues();
-
-      JavaCheckVerifier.verify(FILENAME_ISSUES, visitor, testJarsPathname);
-      file.delete();
-    } else {
-      Fail.fail("");
-    }
-  }
-
-  @Test
-  public void verify_with_unknown_directory_should_fail() throws IOException {
-    try {
-      JavaCheckVerifier.verify(FILENAME_ISSUES, NO_EFFECT_VISITOR, "unknown/test-jars");
-      Fail.fail("");
-    } catch (AssertionError e) {
-      String message = e.getMessage();
-      assertThat(message).startsWith("The directory to be used to extend class path does not exists (");
-      assertThat(message).contains("unknown");
-      assertThat(message).endsWith("test-jars).");
-    }
+    SEJavaCheckVerifier.verifyNoIssue(FILENAME_NO_ISSUE, NO_EFFECT_VISITOR);
   }
 
   @Test
   public void verify_should_fail_when_using_incorrect_shift() throws IOException {
     try {
-      JavaCheckVerifier.verifyNoIssue("src/test/files/JavaCheckVerifierIncorrectShift.java", NO_EFFECT_VISITOR);
-      Fail.fail("");
+      SEJavaCheckVerifier.verifyNoIssue("src/test/files/JavaCheckVerifierIncorrectShift.java", NO_EFFECT_VISITOR);
+      Fail.fail("Should have failed");
     } catch (AssertionError e) {
       assertThat(e).hasMessage("Use only '@+N' or '@-N' to shifts messages.");
     }
@@ -184,28 +145,28 @@ public class JavaCheckVerifierTest {
   @Test
   public void verify_should_fail_when_using_incorrect_attribute() throws IOException {
     try {
-      JavaCheckVerifier.verifyNoIssue("src/test/files/JavaCheckVerifierIncorrectAttribute.java", NO_EFFECT_VISITOR);
-      Fail.fail("");
+      SEJavaCheckVerifier.verifyNoIssue("src/test/files/JavaCheckVerifierIncorrectAttribute.java", NO_EFFECT_VISITOR);
+      Fail.fail("Should have failed");
     } catch (AssertionError e) {
-      assertThat(e).hasMessage("// Noncompliant attributes not valid: invalid=1");
+      assertThat(e).hasMessage("// Noncompliant attributes not valid: 'invalid=1'");
     }
   }
 
   @Test
   public void verify_should_fail_when_using_incorrect_attribute2() throws IOException {
     try {
-      JavaCheckVerifier.verifyNoIssue("src/test/files/JavaCheckVerifierIncorrectAttribute2.java", NO_EFFECT_VISITOR);
-      Fail.fail("");
+      SEJavaCheckVerifier.verifyNoIssue("src/test/files/JavaCheckVerifierIncorrectAttribute2.java", NO_EFFECT_VISITOR);
+      Fail.fail("Should have failed");
     } catch (AssertionError e) {
-      assertThat(e).hasMessage("// Noncompliant attributes not valid: invalid=1=2");
+      assertThat(e).hasMessage("// Noncompliant attributes not valid: 'invalid=1=2'");
     }
   }
 
   @Test
   public void verify_should_fail_when_using_incorrect_endLine() throws IOException {
     try {
-      JavaCheckVerifier.verifyNoIssue("src/test/files/JavaCheckVerifierIncorrectEndLine.java", NO_EFFECT_VISITOR);
-      Fail.fail("");
+      SEJavaCheckVerifier.verifyNoIssue("src/test/files/JavaCheckVerifierIncorrectEndLine.java", NO_EFFECT_VISITOR);
+      Fail.fail("Should have failed");
     } catch (AssertionError e) {
       assertThat(e).hasMessage("endLine attribute should be relative to the line and must be +N with N integer");
     }
@@ -215,10 +176,10 @@ public class JavaCheckVerifierTest {
   public void verify_should_fail_when_using_incorrect_secondaryLocation() throws IOException {
     IssuableSubscriptionVisitor visitor = new FakeVisitor().withDefaultIssues();
     try {
-      JavaCheckVerifier.verify("src/test/files/JavaCheckVerifierIncorrectSecondaryLocation.java", visitor);
-      Fail.fail("");
+      SEJavaCheckVerifier.verify("src/test/files/JavaCheckVerifierIncorrectSecondaryLocation.java", visitor);
+      Fail.fail("Should have failed");
     } catch (AssertionError e) {
-      assertThat(e).hasMessage("Secondary locations: expected: [] unexpected:[3]");
+      assertThat(e).hasMessage("Secondary locations: expected: [] unexpected: [3]. In JavaCheckVerifierIncorrectSecondaryLocation.java:10");
     }
   }
 
@@ -226,10 +187,10 @@ public class JavaCheckVerifierTest {
   public void verify_should_fail_when_using_incorrect_secondaryLocation2() throws IOException {
     IssuableSubscriptionVisitor visitor = new FakeVisitor().withDefaultIssues();
     try {
-      JavaCheckVerifier.verify("src/test/files/JavaCheckVerifierIncorrectSecondaryLocation2.java", visitor);
-      Fail.fail("");
+      SEJavaCheckVerifier.verify("src/test/files/JavaCheckVerifierIncorrectSecondaryLocation2.java", visitor);
+      Fail.fail("Should have failed");
     } catch (AssertionError e) {
-      assertThat(e).hasMessage("Secondary locations: expected: [5] unexpected:[]");
+      assertThat(e).hasMessage("Secondary locations: expected: [5] unexpected: []. In JavaCheckVerifierIncorrectSecondaryLocation2.java:10");
     }
   }
 
@@ -257,7 +218,7 @@ public class JavaCheckVerifierTest {
         .flow(41, "When", 42, "Given")
       .add()
     ;
-    JavaCheckVerifier.verify("src/test/files/JavaCheckVerifierFlows.java", fakeVisitor);
+    SEJavaCheckVerifier.verify("src/test/files/JavaCheckVerifierFlows.java", fakeVisitor);
   }
 
   @Test
@@ -275,9 +236,9 @@ public class JavaCheckVerifierTest {
         .add()
       ;
     try {
-      JavaCheckVerifier.verify("src/test/files/JavaCheckVerifierFlows.java", fakeVisitor);
+      SEJavaCheckVerifier.verify("src/test/files/JavaCheckVerifierFlows.java", fakeVisitor);
     } catch (AssertionError e) {
-      assertThat(e).hasMessage("[Flow npe1 has line differences] expected:<[[9, 3]]> but was:<[[6, 5]]>");
+      assertThat(e).hasMessage("Flow npe1 has line differences. Expected: [9, 3] but was: [6, 5]");
     }
   }
 
@@ -292,7 +253,7 @@ public class JavaCheckVerifierTest {
         .flow(17, "msg", 19, null)
         .add();
     try {
-      JavaCheckVerifier.verify("src/test/files/JavaCheckVerifierFlows.java", fakeVisitor);
+      SEJavaCheckVerifier.verify("src/test/files/JavaCheckVerifierFlows.java", fakeVisitor);
     } catch (AssertionError e) {
       assertThat(e).hasMessage("Missing flows: npe1 [9,3].");
     }
@@ -311,10 +272,10 @@ public class JavaCheckVerifierTest {
       .issueWithFlow(20)
         .flow(17, "msg", 19, null)
         .add();
-    Throwable throwable = catchThrowable(() -> JavaCheckVerifier.verify("src/test/files/JavaCheckVerifierFlows.java", fakeVisitor));
+    Throwable throwable = catchThrowable(() -> SEJavaCheckVerifier.verify("src/test/files/JavaCheckVerifierFlows.java", fakeVisitor));
     assertThat(throwable)
       .isInstanceOf(AssertionError.class)
-      .hasMessage("[Wrong messages in flow npe1 [9,3]] expected:<[\"[a is assigned to b here\", \"a is assigned to null here]\"]> but was:<[\"[invalid 2\", \"invalid 1]\"]>");
+      .hasMessage("Wrong messages in flow npe1 [9,3]. Expected: [\"a is assigned to b here\", \"a is assigned to null here\"] but was: [\"invalid 2\", \"invalid 1\"]");
   }
 
   @Test
@@ -330,24 +291,24 @@ public class JavaCheckVerifierTest {
       .issueWithFlow(20)
         .flow(17, "msg", 19, null)
         .add();
-    Throwable throwable = catchThrowable(() -> JavaCheckVerifier.verify("src/test/files/JavaCheckVerifierFlows.java", fakeVisitor));
+    Throwable throwable = catchThrowable(() -> SEJavaCheckVerifier.verify("src/test/files/JavaCheckVerifierFlows.java", fakeVisitor));
     assertThat(throwable)
       .isInstanceOf(AssertionError.class)
-      .hasMessage("[attribute mismatch for START_COLUMN: {MESSAGE=a is assigned to null here, START_COLUMN=12, END_COLUMN=20}] expected:<[12]> but was:<[6]>");
+      .hasMessage("line 3 attribute mismatch for 'START_COLUMN'. Expected: '12', but was: '6'");
   }
 
   @Test
   public void verify_superfluous_flows() {
     FakeVisitor fakeVisitor = new FakeVisitor()
-      .issueWithFlow(11, "A \"NullPointerException\" could be thrown; \"b\" is nullable here", 5, 11, 15)
+      .issueWithFlow(11, "A \"NullPointerException\" could be thrown; \"b\" is nullable here.", 5, 11, 15)
         .flow()
           .flowItem(3, "a is assigned to null here", 12, 20)
           .flowItem(9, "a is assigned to b here", 7, 12)
         .add()
     ;
     try {
-      JavaCheckVerifier.verify("src/test/files/JavaCheckVerifierFlowsSuperfluous.java", fakeVisitor);
-      Fail.fail("");
+      SEJavaCheckVerifier.verify("src/test/files/JavaCheckVerifierFlowsSuperfluous.java", fakeVisitor);
+      Fail.fail("Should have failed");
     } catch (AssertionError e) {
       assertThat(e).hasMessage("Following flow comments were observed, but not referenced by any issue: {superfluous=8,6,4, npe2=7}");
     }
@@ -362,7 +323,7 @@ public class JavaCheckVerifierTest {
         .flowItem(6, "msg2")
         .flowItem(4, "msg3")
       .add();
-    JavaCheckVerifier.verify("src/test/files/JavaCheckVerifierFlowsExplicitOrder.java", fakeVisitor);
+    SEJavaCheckVerifier.verify("src/test/files/JavaCheckVerifierFlowsExplicitOrder.java", fakeVisitor);
   }
 
   @Test
@@ -376,12 +337,12 @@ public class JavaCheckVerifierTest {
       .flowItem(6, "msg4")
       .flowItem(6, "msg5")
       .add();
-    JavaCheckVerifier.verify("src/test/files/JavaCheckVerifierFlowsImplicitOrder.java", fakeVisitor);
+    SEJavaCheckVerifier.verify("src/test/files/JavaCheckVerifierFlowsImplicitOrder.java", fakeVisitor);
   }
 
   @Test
   public void verify_fail_when_same_explicit_order_is_provided() {
-    Throwable throwable = catchThrowable(() -> JavaCheckVerifier.verify("src/test/files/JavaCheckVerifierFlowsDuplicateExplicitOrder.java", new FakeVisitor()));
+    Throwable throwable = catchThrowable(() -> SEJavaCheckVerifier.verify("src/test/files/JavaCheckVerifierFlowsDuplicateExplicitOrder.java", new FakeVisitor()));
     assertThat(throwable)
       .isInstanceOf(AssertionError.class)
       .hasMessage("Same explicit ORDER=1 provided for two comments.\n"
@@ -391,7 +352,7 @@ public class JavaCheckVerifierTest {
 
   @Test
   public void verify_fail_when_mixing_explicit_and_implicit_order() {
-    Throwable throwable = catchThrowable(() -> JavaCheckVerifier.verify("src/test/files/JavaCheckVerifierFlowsMixedExplicitOrder.java", new FakeVisitor()));
+    Throwable throwable = catchThrowable(() -> SEJavaCheckVerifier.verify("src/test/files/JavaCheckVerifierFlowsMixedExplicitOrder.java", new FakeVisitor()));
     assertThat(throwable)
       .isInstanceOf(AssertionError.class)
       .hasMessage("Mixed explicit and implicit order in same flow.\n"
@@ -422,7 +383,7 @@ public class JavaCheckVerifierTest {
           .flowItem(11, "msg2")
           .flowItem(12, "msg3")
       .add();
-    JavaCheckVerifier.verify("src/test/files/JavaCheckVerifierFlowsWithSameLines.java", fakeVisitor);
+    SEJavaCheckVerifier.verify("src/test/files/JavaCheckVerifierFlowsWithSameLines.java", fakeVisitor);
   }
 
   @Test
@@ -438,12 +399,13 @@ public class JavaCheckVerifierTest {
         .flowItem(5, "f2")
         .flowItem(6, "line6")
       .add();
-    Throwable throwable = catchThrowable(() -> JavaCheckVerifier.verify("src/test/files/JavaCheckVerifierFlowsWithSameLines2.java", fakeVisitor));
+    Throwable throwable = catchThrowable(() -> SEJavaCheckVerifier.verify("src/test/files/JavaCheckVerifierFlowsWithSameLines2.java", fakeVisitor));
     assertThat(throwable)
       .hasMessage("Unexpected flows: [6,5,4]\n"
         + "[6,5,4]. Missing flows: wrong_msg1 [6,5,4],wrong_msg2 [6,5,4].");
   }
 
+  @Rule(key = "JavaCheckVerifier-Tester")
   private static class FakeVisitor extends IssuableSubscriptionVisitor implements IssueWithFlowBuilder {
 
     ListMultimap<Integer, String> issues = LinkedListMultimap.create();

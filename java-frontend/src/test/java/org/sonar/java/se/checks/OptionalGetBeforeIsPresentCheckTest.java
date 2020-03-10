@@ -20,7 +20,7 @@
 package org.sonar.java.se.checks;
 
 import org.junit.Test;
-import org.sonar.java.se.JavaCheckVerifier;
+import org.sonar.java.testing.SEJavaCheckVerifier;
 
 import static org.junit.Assume.assumeTrue;
 
@@ -28,18 +28,18 @@ public class OptionalGetBeforeIsPresentCheckTest {
 
   @Test
   public void test() {
-    JavaCheckVerifier.verify("src/test/files/se/OptionalGetBeforeIsPresentCheck.java", new OptionalGetBeforeIsPresentCheck());
+    SEJavaCheckVerifier.verify("src/test/files/se/OptionalGetBeforeIsPresentCheck.java", new OptionalGetBeforeIsPresentCheck());
   }
 
   @Test
   public void test_with_jdk_more_recent_than_8() {
     assumeTrue(!System.getProperty("java.version").startsWith("1.8"));
-    JavaCheckVerifier.verify("src/test/files/se/OptionalGetBeforeIsPresentCheck_jdk11.java", new OptionalGetBeforeIsPresentCheck());
+    SEJavaCheckVerifier.verify("src/test/files/se/OptionalGetBeforeIsPresentCheck_jdk11.java", new OptionalGetBeforeIsPresentCheck());
   }
 
   @Test
   public void invocation_leading_to_NoSuchElementException() {
-    JavaCheckVerifier.verify("src/test/files/se/MethodInvocationLeadingToNSEE.java", new OptionalGetBeforeIsPresentCheck());
+    SEJavaCheckVerifier.verify("src/test/files/se/MethodInvocationLeadingToNSEE.java", new OptionalGetBeforeIsPresentCheck());
   }
 
 }

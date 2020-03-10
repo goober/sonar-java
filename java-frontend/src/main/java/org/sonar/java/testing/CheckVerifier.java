@@ -17,15 +17,39 @@
  * along with this program; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
-package org.sonar.java.se.checks;
+package org.sonar.java.testing;
 
-import org.junit.Test;
-import org.sonar.java.testing.SEJavaCheckVerifier;
+import java.io.File;
+import java.util.Collection;
+import org.sonar.plugins.java.api.JavaFileScanner;
 
-public class InvariantReturnCheckTest {
+public interface CheckVerifier {
 
-  @Test
-  public void test() {
-    SEJavaCheckVerifier.verify("src/test/files/se/InvariantReturnCheck.java", new InvariantReturnCheck());
+  static CheckVerifier newVerifier() {
+    return InternalCheckVerifier.newInstance();
   }
+
+  CheckVerifier withCheck(JavaFileScanner check);
+
+  CheckVerifier withChecks(JavaFileScanner... checks);
+
+  CheckVerifier withClassPath(Collection<File> classpath);
+
+  CheckVerifier withJavaVersion(int javaVersionAsInt);
+
+  CheckVerifier onFile(String filename);
+
+  CheckVerifier onFiles(String... otherFilenames);
+
+  CheckVerifier onFiles(Collection<String> filenames);
+
+  CheckVerifier withoutSemantic();
+
+  void verifyIssues();
+
+  void verifyIssueOnFile(String expectedIssueMessage);
+
+  void verifyIssueOnProject(String expectedIssueMessage);
+
+  void verifyNoIssues();
 }

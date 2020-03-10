@@ -17,7 +17,7 @@
  * along with this program; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
-package org.sonar.java.se;
+package org.sonar.java.testing;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Strings;
@@ -28,6 +28,12 @@ import com.google.common.collect.Multimap;
 import com.google.common.collect.Sets;
 import com.google.common.collect.SortedSetMultimap;
 import com.google.common.collect.TreeMultimap;
+import com.google.gson.Gson;
+import com.google.gson.JsonParseException;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.net.URL;
+import java.nio.charset.StandardCharsets;
 import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -43,6 +49,7 @@ import java.util.Scanner;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.function.ToIntFunction;
+import java.util.function.UnaryOperator;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -51,25 +58,27 @@ import java.util.stream.Stream;
 import javax.annotation.CheckForNull;
 import javax.annotation.Nullable;
 import org.apache.commons.lang.StringUtils;
-import org.assertj.core.api.Fail;
+import org.sonar.api.utils.AnnotationUtils;
+import org.sonar.check.Rule;
 import org.sonar.java.AnalyzerMessage;
+import org.sonar.java.RspecKey;
 import org.sonar.plugins.java.api.IssuableSubscriptionVisitor;
 import org.sonar.plugins.java.api.tree.SyntaxTrivia;
 import org.sonar.plugins.java.api.tree.Tree;
 
 import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toList;
-import static org.sonar.java.se.Expectations.IssueAttribute.EFFORT_TO_FIX;
-import static org.sonar.java.se.Expectations.IssueAttribute.END_COLUMN;
-import static org.sonar.java.se.Expectations.IssueAttribute.END_LINE;
-import static org.sonar.java.se.Expectations.IssueAttribute.FLOWS;
-import static org.sonar.java.se.Expectations.IssueAttribute.LINE;
-import static org.sonar.java.se.Expectations.IssueAttribute.MESSAGE;
-import static org.sonar.java.se.Expectations.IssueAttribute.ORDER;
-import static org.sonar.java.se.Expectations.IssueAttribute.SECONDARY_LOCATIONS;
-import static org.sonar.java.se.Expectations.IssueAttribute.START_COLUMN;
+import static org.sonar.java.testing.Expectations.IssueAttribute.EFFORT_TO_FIX;
+import static org.sonar.java.testing.Expectations.IssueAttribute.END_COLUMN;
+import static org.sonar.java.testing.Expectations.IssueAttribute.END_LINE;
+import static org.sonar.java.testing.Expectations.IssueAttribute.FLOWS;
+import static org.sonar.java.testing.Expectations.IssueAttribute.LINE;
+import static org.sonar.java.testing.Expectations.IssueAttribute.MESSAGE;
+import static org.sonar.java.testing.Expectations.IssueAttribute.ORDER;
+import static org.sonar.java.testing.Expectations.IssueAttribute.SECONDARY_LOCATIONS;
+import static org.sonar.java.testing.Expectations.IssueAttribute.START_COLUMN;
 
-class Expectations {
+public class Expectations {
 
   private static final Map<String, IssueAttribute> ATTRIBUTE_MAP = ImmutableMap.<String, IssueAttribute>builder()
     .put("message", MESSAGE)
@@ -85,7 +94,7 @@ class Expectations {
     .put("order", ORDER)
     .build();
 
-  enum IssueAttribute {
+  public enum IssueAttribute {
     LINE(Function.identity()),
     ORDER(Integer::valueOf),
     MESSAGE(Function.identity()),
@@ -97,52 +106,52 @@ class Expectations {
     FLOWS(multiValueAttribute(Function.identity()));
 
     private Function<String, ?> setter;
-    Function<Object, Object> getter = Function.identity();
+    private Function<Object, Object> getter = Function.identity();
 
     IssueAttribute(Function<String, ?> setter) {
       this.setter = setter;
     }
 
-    IssueAttribute(Function<String, ?> setter, Function<Object, Object> getter) {
+    IssueAttribute(Function<String, ?> setter, UnaryOperator<Object> getter) {
       this.setter = setter;
       this.getter = getter;
     }
 
-    static <T> Function<String, List<T>> multiValueAttribute(Function<String, T> convert) {
-      return (String input) -> Strings.isNullOrEmpty(input) ? Collections.emptyList() : Arrays.stream(input.split(",")).map(convert).collect(toList());
+    private static <T> Function<String, List<T>> multiValueAttribute(Function<String, T> convert) {
+      return (String input) -> Strings.isNullOrEmpty(input) ? Collections.emptyList() : Arrays.stream(input.split(",")).map(String::trim).map(convert).collect(toList());
     }
 
-    <T> T get(Map<IssueAttribute, Object> values) {
+    public <T> T get(Map<IssueAttribute, Object> values) {
       Object rawValue = values.get(this);
       return rawValue == null ? null : (T) getter.apply(rawValue);
     }
   }
 
-  static class Issue extends EnumMap<IssueAttribute, Object> {
+  public static class Issue extends EnumMap<IssueAttribute, Object> {
 
     private Issue() {
       super(IssueAttribute.class);
     }
 
-    static Issue create() {
+    private static Issue create() {
       return new Issue();
     }
   }
 
-  static class FlowComment {
-    final String id;
-    final int line;
-    final Map<IssueAttribute, Object> attributes;
-    final int startColumn;
+  public static class FlowComment {
+    private final String id;
+    private final int line;
+    private final Map<IssueAttribute, Object> attributes;
+    private final int startColumn;
 
-    public FlowComment(String id, int line, int startColumn, Map<IssueAttribute, Object> attributes) {
+    private FlowComment(String id, int line, int startColumn, Map<IssueAttribute, Object> attributes) {
       this.id = id;
       this.line = line;
       this.startColumn = startColumn;
       this.attributes = Collections.unmodifiableMap(attributes);
     }
 
-    int compareTo(FlowComment other) {
+    private int compareTo(FlowComment other) {
       if (this == other) {
         return 0;
       }
@@ -150,7 +159,7 @@ class Expectations {
       Integer otherOrder = ORDER.get(other.attributes);
       if (thisOrder != null && otherOrder != null) {
         if(thisOrder.equals(otherOrder)) {
-          Fail.fail("Same explicit ORDER=%s provided for two comments.\n%s\n%s", thisOrder, this, other);
+          throw new AssertionError("Same explicit ORDER=" + thisOrder + " provided for two comments.\n" + this + "\n" + other);
         }
         return thisOrder.compareTo(otherOrder);
       }
@@ -161,12 +170,20 @@ class Expectations {
       throw new AssertionError("Mixed explicit and implicit order in same flow.\n" + this + "\n" + other);
     }
 
+    public Map<IssueAttribute, Object> attributes() {
+      return attributes;
+    }
+
+    public String id() {
+      return id;
+    }
+
     @CheckForNull
-    String message() {
+    public String message() {
       return MESSAGE.get(attributes);
     }
 
-    int line() {
+    public int line() {
       return line;
     }
 
@@ -176,24 +193,48 @@ class Expectations {
     }
   }
 
-  final Multimap<Integer, Issue> issues = ArrayListMultimap.create();
-  final SortedSetMultimap<String, FlowComment> flows = TreeMultimap.create(String::compareTo, Collections.reverseOrder(FlowComment::compareTo));
-  final boolean expectNoIssues;
-  final String expectFileIssue;
-  final Integer expectFileIssueOnLine;
+  private final Multimap<Integer, Issue> issues = ArrayListMultimap.create();
+  private final SortedSetMultimap<String, FlowComment> flows = TreeMultimap.create(String::compareTo, Collections.reverseOrder(FlowComment::compareTo));
+  private boolean expectNoIssues = false;
+  private String expectedProjectIssue = null;
+  private String expectFileIssue = null;
 
   private Set<String> seenFlowIds = new HashSet<>();
 
   Expectations() {
-    this(false, null, null);
   }
 
-  Expectations(boolean expectNoIssues, @Nullable String expectFileIssue, @Nullable Integer expectFileIssueOnLine) {
-    this.expectNoIssues = expectNoIssues;
-    this.expectFileIssue = expectFileIssue;
-    this.expectFileIssueOnLine = expectFileIssueOnLine;
+  public void setExpectNoIssues() {
+    this.expectNoIssues = true;
   }
 
+  public boolean expectNoIssues() {
+    return expectNoIssues;
+  }
+
+  public void setExpectedProjectIssue(String expectedMessage) {
+    this.expectedProjectIssue = expectedMessage;
+  }
+
+  public String expectedProjectIssue() {
+    return expectedProjectIssue;
+  }
+
+  public void setExpectedFileIssue(String expectedMessage) {
+    this.expectFileIssue = expectedMessage;
+  }
+
+  public String expectedFileIssue() {
+    return expectFileIssue;
+  }
+
+  public SortedSetMultimap<String, FlowComment> flows() {
+    return flows;
+  }
+
+  public Multimap<Integer, Issue> issues() {
+    return issues;
+  }
 
   Optional<String> containFlow(List<AnalyzerMessage> actual) {
     List<Integer> actualLines = flowToLines(actual, AnalyzerMessage::getLine);
@@ -221,7 +262,7 @@ class Expectations {
     return expectedMessages.equals(actualMessages);
   }
 
-  Set<String> unseenFlowIds() {
+  public Set<String> unseenFlowIds() {
     return Sets.difference(flows.keySet(), seenFlowIds);
   }
 
@@ -236,21 +277,31 @@ class Expectations {
     return flows.get(flowId).stream().map(f -> String.valueOf(f.line)).collect(joining(","));
   }
 
-  IssuableSubscriptionVisitor parser() {
+  public Parser parser() {
     return new Parser(issues, flows);
   }
 
+  public Parser noEffectParser() {
+    Parser parser = new Parser(issues, flows);
+    parser.nonCompliantComment = Pattern.compile("NO_ISSUES_WILL_BE_COLLECTED");
+    parser.shift = Pattern.compile("NO_ISSUES_WILL_BE_COLLECTED");
+    return parser;
+  }
+
   @VisibleForTesting
-  static class Parser extends IssuableSubscriptionVisitor {
-    private static final Pattern NONCOMPLIANT_COMMENT = Pattern.compile("//\\s+Noncompliant");
+  public static class Parser extends IssuableSubscriptionVisitor {
+    private static final String NONCOMPLIANT_FLAG = "Noncompliant";
+
+    private Pattern nonCompliantComment = Pattern.compile("//\\s+" + NONCOMPLIANT_FLAG);
+    private Pattern shift = Pattern.compile(NONCOMPLIANT_FLAG + "@(\\S+)");
+
     private static final Pattern FLOW_COMMENT = Pattern.compile("//\\s+flow");
-    private static final Pattern SHIFT = Pattern.compile("Noncompliant@(\\S+)");
     private static final Pattern FLOW = Pattern.compile("flow@(?<ids>\\S+).*?(?=flow@)?");
 
     private final Multimap<String, FlowComment> flows;
     private final Multimap<Integer, Issue> issues;
 
-    Parser(Multimap<Integer, Issue> issues, Multimap<String, FlowComment> flows) {
+    private Parser(Multimap<Integer, Issue> issues, Multimap<String, FlowComment> flows) {
       this.issues = issues;
       this.flows = flows;
     }
@@ -262,15 +313,12 @@ class Expectations {
 
     @Override
     public void visitTrivia(SyntaxTrivia syntaxTrivia) {
-      // ignore whole commented lines
-      if (syntaxTrivia.column() != 0) {
-        collectExpectedIssues(syntaxTrivia.comment(), syntaxTrivia.startLine());
-      }
+      collectExpectedIssues(syntaxTrivia.comment(), syntaxTrivia.startLine());
     }
 
     @VisibleForTesting
     void collectExpectedIssues(String comment, int line) {
-      if (NONCOMPLIANT_COMMENT.matcher(comment).find()) {
+      if (nonCompliantComment.matcher(comment).find()) {
         ParsedComment parsedComment = parseIssue(comment, line);
         issues.put(LINE.get(parsedComment.issue), parsedComment.issue);
         parsedComment.flows.forEach(f -> flows.put(f.id, f));
@@ -281,7 +329,7 @@ class Expectations {
     }
 
     @VisibleForTesting
-    static List<FlowComment> parseFlows(@Nullable String comment, int line) {
+    public static List<FlowComment> parseFlows(@Nullable String comment, int line) {
       if (comment == null) {
         return Collections.emptyList();
       }
@@ -310,11 +358,9 @@ class Expectations {
       return ids.stream().map(id -> new FlowComment(id, line, startColumn, attributes));
     }
 
-
-
     @VisibleForTesting
-    static ParsedComment parseIssue(String comment, int line) {
-      Matcher shiftMatcher = SHIFT.matcher(comment);
+    public ParsedComment parseIssue(String comment, int line) {
+      Matcher shiftMatcher = shift.matcher(comment);
       Matcher flowMatcher = FLOW.matcher(comment);
       return createIssue(line,
         shiftMatcher.find() ? shiftMatcher.group(1) : null,
@@ -343,8 +389,7 @@ class Expectations {
       try {
         return LineRef.fromString(shift);
       } catch (NumberFormatException e) {
-        Fail.fail("Use only '@+N' or '@-N' to shifts messages.");
-        return null;
+        throw new AssertionError("Use only '@+N' or '@-N' to shifts messages.");
       }
     }
 
@@ -360,10 +405,10 @@ class Expectations {
 
     private static Map<IssueAttribute, Object> adjustEndLine(Map<IssueAttribute, Object> attributes, int line) {
       Object endLine = attributes.get(END_LINE);
-      if (endLine != null && endLine instanceof LineRef.RelativeLineRef) {
+      if (endLine instanceof LineRef.RelativeLineRef) {
         LineRef.RelativeLineRef relativeLineRef = (LineRef.RelativeLineRef) endLine;
         if (relativeLineRef.offset < 0) {
-          Fail.fail("endLine attribute should be relative to the line and must be +N with N integer");
+          throw new AssertionError("endLine attribute should be relative to the line and must be +N with N integer");
         }
         EnumMap<IssueAttribute, Object> copy = new EnumMap<>(attributes);
         copy.put(END_LINE, new LineRef.AbsoluteLineRef(relativeLineRef.getLine(line)));
@@ -373,21 +418,23 @@ class Expectations {
     }
 
     private static Map.Entry<IssueAttribute, Object> parseAttribute(String attribute) {
-      Scanner scanner = new Scanner(attribute).useDelimiter("[=]+");
-      String name = scanner.next();
-      if (!ATTRIBUTE_MAP.containsKey(name)) {
-        Fail.fail("// Noncompliant attributes not valid: " + attribute);
+      try (Scanner scanner = new Scanner(attribute)) {
+        scanner.useDelimiter("[=]+");
+        String name = scanner.next();
+        if (!ATTRIBUTE_MAP.containsKey(name)) {
+          throw new AssertionError(String.format("// Noncompliant attributes not valid: '%s'", attribute));
+        }
+        IssueAttribute key = ATTRIBUTE_MAP.get(name);
+        Object value = key.setter.apply(scanner.hasNext() ? scanner.next() : null);
+        return new AbstractMap.SimpleImmutableEntry<>(key, value);
       }
-      IssueAttribute key = ATTRIBUTE_MAP.get(name);
-      Object value = key.setter.apply(scanner.hasNext() ? scanner.next() : null);
-      return new AbstractMap.SimpleImmutableEntry<>(key, value);
     }
 
     private static String parseMessage(String cleanedComment, int horizon) {
       return StringUtils.substringBetween(cleanedComment.substring(0, horizon), "{{", "}}");
     }
 
-    static class ParsedComment {
+    public static class ParsedComment {
       final Issue issue;
       final List<FlowComment> flows;
 
@@ -395,12 +442,20 @@ class Expectations {
         this.issue = issue;
         this.flows = flows;
       }
+
+      public Issue issue() {
+        return issue;
+      }
+
+      public List<FlowComment> flows() {
+        return flows;
+      }
     }
 
-    abstract static class LineRef {
+    public abstract static class LineRef {
       abstract int getLine(int ref);
 
-      static LineRef fromString(String input) {
+      public static LineRef fromString(String input) {
         if (input.startsWith("+") || input.startsWith("-")) {
           return new RelativeLineRef(Integer.valueOf(input));
         } else {
@@ -408,23 +463,24 @@ class Expectations {
         }
       }
 
-      static int toLine(Object ref) {
+      public static int toLine(Object ref) {
         return ((LineRef) ref).getLine(0);
       }
 
-      static class AbsoluteLineRef extends LineRef {
+      public static class AbsoluteLineRef extends LineRef {
         final int line;
 
         public AbsoluteLineRef(int line) {
           this.line = line;
         }
 
+        @Override
         public int getLine(int ref) {
           return line;
         }
       }
 
-      static class RelativeLineRef extends LineRef {
+      public static class RelativeLineRef extends LineRef {
         final int offset;
 
         RelativeLineRef(int offset) {
@@ -444,9 +500,72 @@ class Expectations {
 
       @Override
       public boolean equals(Object obj) {
-        return LineRef.class.isAssignableFrom(obj.getClass()) && Objects.equals(getLine(0), ((LineRef) obj).getLine(0));
+        return obj != null
+          && LineRef.class.isAssignableFrom(obj.getClass())
+          && Objects.equals(getLine(0), ((LineRef) obj).getLine(0));
       }
     }
+  }
+
+  enum RemediationFunction {
+    LINEAR, CONST
+  }
+
+  static class RuleJSON {
+    static class Remediation {
+      String func;
+    }
+
+    Remediation remediation;
+  }
+
+  @CheckForNull
+  public static RemediationFunction remediationFunction(AnalyzerMessage issue) {
+    String ruleKey = ruleKey(issue);
+    try {
+      RuleJSON rule = getRuleJSON(ruleKey);
+      if (rule.remediation == null) {
+        return null;
+      }
+      switch (rule.remediation.func) {
+        case "Linear":
+          return RemediationFunction.LINEAR;
+        case "Constant/Issue":
+          return RemediationFunction.CONST;
+        default:
+          return null;
+      }
+    } catch (IOException | JsonParseException e) {
+      // Failed to open JSON file, as this is not part of API yet, we should not fail because of this
+      // Remediation function and cost not provided, "constant" is assumed.
+      return null;
+    }
+  }
+
+  private static RuleJSON getRuleJSON(String ruleKey) throws IOException {
+    String ruleJson = "/org/sonar/l10n/java/rules/java/" + ruleKey + "_java.json";
+    URL resource = CheckVerifier.class.getResource(ruleJson);
+    if (resource == null) {
+      throw new IOException(ruleJson + " not found");
+    }
+    Gson gson = new Gson();
+    return gson.fromJson(new InputStreamReader(resource.openStream(), StandardCharsets.UTF_8), RuleJSON.class);
+  }
+
+  private static String ruleKey(AnalyzerMessage issue) {
+    String ruleKey;
+    RspecKey rspecKeyAnnotation = AnnotationUtils.getAnnotation(issue.getCheck().getClass(), RspecKey.class);
+    if (rspecKeyAnnotation != null) {
+      ruleKey = rspecKeyAnnotation.value();
+    } else {
+      Rule ruleAnnotation = AnnotationUtils.getAnnotation(issue.getCheck().getClass(), Rule.class);
+      if (ruleAnnotation != null) {
+        ruleKey = ruleAnnotation.key();
+      } else {
+        throw new AssertionError("Rules should be annotated with '@Rule(key = \"...\")' annotation (org.sonar.check.Rule).");
+      }
+    }
+    return ruleKey;
   }
 
 }

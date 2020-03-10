@@ -58,6 +58,7 @@ import org.sonar.java.se.xproc.BehaviorCache;
 import org.sonar.java.se.xproc.HappyPathYield;
 import org.sonar.java.se.xproc.MethodBehavior;
 import org.sonar.java.se.xproc.MethodYield;
+import org.sonar.java.testing.SEJavaCheckVerifier;
 import org.sonar.plugins.java.api.semantic.Symbol;
 import org.sonar.plugins.java.api.semantic.Type;
 import org.sonar.plugins.java.api.tree.AssignmentExpressionTree;
@@ -75,13 +76,13 @@ public class ExplodedGraphWalkerTest {
 
   @Test
   public void seEngineTest() {
-    JavaCheckVerifier.verify("src/test/files/se/SeEngineTest.java", seChecks());
+    SEJavaCheckVerifier.verify("src/test/files/se/SeEngineTest.java", seChecks());
   }
 
   @Test
   public void test_cleanup_state() {
     final int[] steps = new int[2];
-    JavaCheckVerifier.verifyNoIssue("src/test/files/se/SeEngineTestCleanupState.java", new SymbolicExecutionVisitor(Collections.emptyList(), new BehaviorCache(new SquidClassLoader(new ArrayList<>()))) {
+    SEJavaCheckVerifier.verifyNoIssue("src/test/files/se/SeEngineTestCleanupState.java", new SymbolicExecutionVisitor(Collections.emptyList(), new BehaviorCache(new SquidClassLoader(new ArrayList<>()))) {
       @Override
       public void visitNode(Tree tree) {
         ExplodedGraphWalker explodedGraphWalker = new ExplodedGraphWalker(this.behaviorCache, (Sema) context.getSemanticModel(), false);
@@ -89,7 +90,7 @@ public class ExplodedGraphWalkerTest {
         steps[0] += explodedGraphWalker.steps;
       }
     });
-    JavaCheckVerifier.verifyNoIssue("src/test/files/se/SeEngineTestCleanupState.java", new SymbolicExecutionVisitor(Collections.emptyList(), new BehaviorCache(new SquidClassLoader(new ArrayList<>()))) {
+    SEJavaCheckVerifier.verifyNoIssue("src/test/files/se/SeEngineTestCleanupState.java", new SymbolicExecutionVisitor(Collections.emptyList(), new BehaviorCache(new SquidClassLoader(new ArrayList<>()))) {
       @Override
       public void visitNode(Tree tree) {
         ExplodedGraphWalker explodedGraphWalker = new ExplodedGraphWalker(this.behaviorCache, (Sema) context.getSemanticModel());
@@ -104,17 +105,17 @@ public class ExplodedGraphWalkerTest {
 
   @Test
   public void reproducer() throws Exception {
-    JavaCheckVerifier.verify("src/test/files/se/Reproducer.java", seChecks());
+    SEJavaCheckVerifier.verify("src/test/files/se/Reproducer.java", seChecks());
   }
 
   @Test
   public void exception_catched_in_loop() throws Exception {
-    JavaCheckVerifier.verify("src/test/files/se/LoopExceptionField.java", seChecks());
+    SEJavaCheckVerifier.verify("src/test/files/se/LoopExceptionField.java", seChecks());
   }
 
   @Test
   public void constraints_on_fields() throws Exception {
-    JavaCheckVerifier.verify("src/test/files/se/ConstraintsOnFields.java", seChecks());
+    SEJavaCheckVerifier.verify("src/test/files/se/ConstraintsOnFields.java", seChecks());
   }
 
   @Test
@@ -122,7 +123,7 @@ public class ExplodedGraphWalkerTest {
     Set<Type> encounteredExceptions = new HashSet<>();
     int[] tested = {0};
 
-    JavaCheckVerifier.verifyNoIssue("src/test/files/se/ExceptionalSymbolicValueStacked.java", new SymbolicExecutionVisitor(Collections.emptyList(), new BehaviorCache(new SquidClassLoader(new ArrayList<>()))) {
+    SEJavaCheckVerifier.verifyNoIssue("src/test/files/se/ExceptionalSymbolicValueStacked.java", new SymbolicExecutionVisitor(Collections.emptyList(), new BehaviorCache(new SquidClassLoader(new ArrayList<>()))) {
 
       private ExplodedGraphWalker explodedGraphWalker;
 
@@ -177,7 +178,7 @@ public class ExplodedGraphWalkerTest {
   @Test
   public void use_false_branch_on_loop_when_reaching_max_exec_program_point() {
     ProgramPoint[] programPoints = new ProgramPoint[2];
-    JavaCheckVerifier.verifyNoIssue("src/test/files/se/SeEngineTestMaxExecProgramPoint.java", new SymbolicExecutionVisitor(Collections.emptyList(), new BehaviorCache(new SquidClassLoader(new ArrayList<>()))) {
+    SEJavaCheckVerifier.verifyNoIssue("src/test/files/se/SeEngineTestMaxExecProgramPoint.java", new SymbolicExecutionVisitor(Collections.emptyList(), new BehaviorCache(new SquidClassLoader(new ArrayList<>()))) {
 
       private ExplodedGraphWalker explodedGraphWalker = null;
 
@@ -228,7 +229,7 @@ public class ExplodedGraphWalkerTest {
 
   @Test
   public void test_limited_loop_execution() throws Exception {
-    JavaCheckVerifier.verifyNoIssue("src/test/files/se/SeEngineTestCase.java", new SymbolicExecutionVisitor(Collections.emptyList(), new BehaviorCache(new SquidClassLoader(new ArrayList<>()))) {
+    SEJavaCheckVerifier.verifyNoIssue("src/test/files/se/SeEngineTestCase.java", new SymbolicExecutionVisitor(Collections.emptyList(), new BehaviorCache(new SquidClassLoader(new ArrayList<>()))) {
       @Override
       public void visitNode(Tree tree) {
         try {
@@ -243,7 +244,7 @@ public class ExplodedGraphWalkerTest {
 
   @Test
   public void test_max_number_starting_states() throws Exception {
-    JavaCheckVerifier.verifyNoIssue("src/test/files/se/MaxStartingStates.java",
+    SEJavaCheckVerifier.verifyNoIssue("src/test/files/se/MaxStartingStates.java",
       new SymbolicExecutionVisitor(Collections.emptyList(), new BehaviorCache(new SquidClassLoader(new ArrayList<>()))) {
         @Override
         public void visitNode(Tree tree) {
@@ -260,7 +261,7 @@ public class ExplodedGraphWalkerTest {
 
   @Test
   public void test_max_number_starting_states_boundaries() throws Exception {
-    JavaCheckVerifier.verifyNoIssue("src/test/files/se/StartingStates1024.java",
+    SEJavaCheckVerifier.verifyNoIssue("src/test/files/se/StartingStates1024.java",
       new SymbolicExecutionVisitor(Collections.emptyList(), new BehaviorCache(new SquidClassLoader(new ArrayList<>()))) {
         @Override
         public void visitNode(Tree tree) {
@@ -276,7 +277,7 @@ public class ExplodedGraphWalkerTest {
 
   @Test
   public void test_maximum_steps_reached() throws Exception {
-    JavaCheckVerifier.verifyNoIssue("src/test/files/se/MaxSteps.java", new SymbolicExecutionVisitor(Collections.emptyList(), new BehaviorCache(new SquidClassLoader(new ArrayList<>()))) {
+    SEJavaCheckVerifier.verifyNoIssue("src/test/files/se/MaxSteps.java", new SymbolicExecutionVisitor(Collections.emptyList(), new BehaviorCache(new SquidClassLoader(new ArrayList<>()))) {
       @Override
       public void visitNode(Tree tree) {
         try {
@@ -292,12 +293,12 @@ public class ExplodedGraphWalkerTest {
 
   @Test
   public void test_maximum_steps_reached_with_issue() throws Exception {
-    JavaCheckVerifier.verify("src/test/files/se/MaxStepsWithIssue.java", new UnclosedResourcesCheck());
+    SEJavaCheckVerifier.verify("src/test/files/se/MaxStepsWithIssue.java", new UnclosedResourcesCheck());
   }
 
   @Test
   public void test_maximum_number_nested_states() throws Exception {
-    JavaCheckVerifier.verifyNoIssue("src/test/files/se/MaxNestedStates.java", new SymbolicExecutionVisitor(Collections.emptyList(), new BehaviorCache(new SquidClassLoader(new ArrayList<>()))) {
+    SEJavaCheckVerifier.verifyNoIssue("src/test/files/se/MaxNestedStates.java", new SymbolicExecutionVisitor(Collections.emptyList(), new BehaviorCache(new SquidClassLoader(new ArrayList<>()))) {
       @Override
       public void visitNode(Tree tree) {
         try {
@@ -313,70 +314,70 @@ public class ExplodedGraphWalkerTest {
 
   @Test
   public void test_propagation_of_bytecode_analysis_failure() throws Exception {
-    JavaCheckVerifier.verifyNoIssue("src/test/files/se/BytecodeExceptionPropagation.java", new NullDereferenceCheck());
+    SEJavaCheckVerifier.verifyNoIssue("src/test/files/se/BytecodeExceptionPropagation.java", new NullDereferenceCheck());
 
   }
 
   @Test
   public void system_exit() throws Exception {
-    JavaCheckVerifier.verify("src/test/files/se/SystemExit.java", seChecks());
+    SEJavaCheckVerifier.verify("src/test/files/se/SystemExit.java", seChecks());
   }
 
   @Test
   public void read_parametersAreNonnullByDefault_and_parametersAreNullableByDefault_annotations() throws Exception {
-    JavaCheckVerifier.verify("src/test/files/se/annotations/PackageAnnotationsNullable.java", seChecks());
-    JavaCheckVerifier.verify("src/test/files/se/annotations/PackageAnnotationsNonNull.java", seChecks());
+    SEJavaCheckVerifier.verify("src/test/files/se/annotations/PackageAnnotationsNullable.java", seChecks());
+    SEJavaCheckVerifier.verify("src/test/files/se/annotations/PackageAnnotationsNonNull.java", seChecks());
 
-    JavaCheckVerifier.verify("src/test/files/se/annotations/ClassAnnotationsNullable.java", seChecks());
-    JavaCheckVerifier.verify("src/test/files/se/annotations/ClassAnnotationsNonNull.java", seChecks());
+    SEJavaCheckVerifier.verify("src/test/files/se/annotations/ClassAnnotationsNullable.java", seChecks());
+    SEJavaCheckVerifier.verify("src/test/files/se/annotations/ClassAnnotationsNonNull.java", seChecks());
 
-    JavaCheckVerifier.verify("src/test/files/se/annotations/MethodAnnotationsNullable.java", seChecks());
-    JavaCheckVerifier.verify("src/test/files/se/annotations/MethodAnnotationsNonNull.java", seChecks());
+    SEJavaCheckVerifier.verify("src/test/files/se/annotations/MethodAnnotationsNullable.java", seChecks());
+    SEJavaCheckVerifier.verify("src/test/files/se/annotations/MethodAnnotationsNonNull.java", seChecks());
   }
 
   @Test
   public void read_jetbrains_nullness_annotations() throws Exception {
-    JavaCheckVerifier.verify("src/test/files/se/annotations/JetBrains.java", seChecks());
+    SEJavaCheckVerifier.verify("src/test/files/se/annotations/JetBrains.java", seChecks());
   }
 
   @Test
   public void androidx_nullness_annotations() throws Exception {
-    JavaCheckVerifier.verify("src/test/files/se/annotations/AndroidXAnnotations.java", seChecks());
+    SEJavaCheckVerifier.verify("src/test/files/se/annotations/AndroidXAnnotations.java", seChecks());
   }
 
   @Test
   public void xproc_usage_of_method_behaviors() throws Exception {
-    JavaCheckVerifier.verify("src/test/files/se/XProcMethodBehavior.java", seChecks());
+    SEJavaCheckVerifier.verify("src/test/files/se/XProcMethodBehavior.java", seChecks());
   }
 
   @Test
   public void xproc_usage_of_method_behaviors_with_explicit_exceptional_path() throws Exception {
-    JavaCheckVerifier.verify("src/test/files/se/XProcMethodBehaviorExplicitException.java", seChecks());
+    SEJavaCheckVerifier.verify("src/test/files/se/XProcMethodBehaviorExplicitException.java", seChecks());
   }
 
   @Test
   public void xproc_usage_of_method_behaviors_with_explicit_exceptional_path_and_branching() throws Exception {
-    JavaCheckVerifier.verify("src/test/files/se/XProcMethodBehaviorExplicitExceptionBranching.java", seChecks());
+    SEJavaCheckVerifier.verify("src/test/files/se/XProcMethodBehaviorExplicitExceptionBranching.java", seChecks());
   }
 
   @Test
   public void xproc_usage_of_exceptional_path_and_branching() throws Exception {
-    JavaCheckVerifier.verify("src/test/files/se/XProcExceptionalBranching.java", seChecks());
+    SEJavaCheckVerifier.verify("src/test/files/se/XProcExceptionalBranching.java", seChecks());
   }
 
   @Test
   public void xproc_usage_of_exceptional_path_and_branching_with_reporting() throws Exception {
-    JavaCheckVerifier.verify("src/test/files/se/XProcExceptionalBranchingReporting.java", seChecks());
+    SEJavaCheckVerifier.verify("src/test/files/se/XProcExceptionalBranchingReporting.java", seChecks());
   }
 
   @Test
   public void xproc_reporting_with_var_args() throws Exception {
-    JavaCheckVerifier.verify("src/test/files/se/XProcReportingWithVarArgs.java", seChecks());
+    SEJavaCheckVerifier.verify("src/test/files/se/XProcReportingWithVarArgs.java", seChecks());
   }
 
   @Test
   public void xproc_keep_yield_for_reporting() throws Exception {
-    JavaCheckVerifier.verifyNoIssue("src/test/files/se/YieldReporting.java", new SymbolicExecutionVisitor(Collections.emptyList(), new BehaviorCache(new SquidClassLoader(new ArrayList<>()))) {
+    SEJavaCheckVerifier.verifyNoIssue("src/test/files/se/YieldReporting.java", new SymbolicExecutionVisitor(Collections.emptyList(), new BehaviorCache(new SquidClassLoader(new ArrayList<>()))) {
       @Override
       public void visitNode(Tree tree) {
         MethodTree methodTree = (MethodTree) tree;
@@ -391,7 +392,7 @@ public class ExplodedGraphWalkerTest {
 
   @Test
   public void test_this_super_not_null() throws Exception {
-    JavaCheckVerifier.verify("src/test/files/se/ThisSuperNotNull.java", seChecks());
+    SEJavaCheckVerifier.verify("src/test/files/se/ThisSuperNotNull.java", seChecks());
   }
 
   static class MethodAsInstruction extends SECheck {
@@ -409,13 +410,13 @@ public class ExplodedGraphWalkerTest {
   @Test
   public void methods_should_be_evaluated_only_once() throws Exception {
     MethodAsInstruction check = new MethodAsInstruction();
-    JavaCheckVerifier.verifyNoIssue("src/test/files/se/EvaluateMethodOnce.java", check);
+    SEJavaCheckVerifier.verifyNoIssue("src/test/files/se/EvaluateMethodOnce.java", check);
     assertThat(check.toStringCall).isEqualTo(1);
   }
 
   @Test
   public void compound_assignment_should_create_new_value_on_stack() throws Exception {
-    JavaCheckVerifier.verifyNoIssue("src/test/files/se/CompoundAssignmentExecution.java", new SECheck() {
+    SEJavaCheckVerifier.verifyNoIssue("src/test/files/se/CompoundAssignmentExecution.java", new SECheck() {
 
       private SymbolicValue rhsValue;
 
@@ -456,13 +457,13 @@ public class ExplodedGraphWalkerTest {
         return state;
       }
     };
-    JavaCheckVerifier.verifyNoIssue("src/test/files/se/BinaryTreeExecution.java", check);
+    SEJavaCheckVerifier.verifyNoIssue("src/test/files/se/BinaryTreeExecution.java", check);
     assertThat(counter[0]).isEqualTo(17);
   }
 
   @Test
   public void simple_assignment_should_preserve_value_on_stack() throws Exception {
-    JavaCheckVerifier.verifyNoIssue("src/test/files/se/SimpleAssignmentExecution.java", new SECheck() {
+    SEJavaCheckVerifier.verifyNoIssue("src/test/files/se/SimpleAssignmentExecution.java", new SECheck() {
 
       private SymbolicValue rhsValue;
 
@@ -522,7 +523,7 @@ public class ExplodedGraphWalkerTest {
   @Test
   public void private_method_should_be_visited() {
     List<String> visitedMethods = new ArrayList<>();
-    JavaCheckVerifier.verifyNoIssue("src/test/files/se/XprocIfaceWithPrivateMethod.java", new SECheck() {
+    SEJavaCheckVerifier.verifyNoIssue("src/test/files/se/XprocIfaceWithPrivateMethod.java", new SECheck() {
       @Override
       public void init(MethodTree methodTree, CFG cfg) {
         visitedMethods.add(methodTree.symbol().name());
@@ -533,8 +534,8 @@ public class ExplodedGraphWalkerTest {
 
   @Test
   public void constraints_on_field_reset() {
-    JavaCheckVerifier.verify("src/test/java/org/sonar/java/resolve/targets/se/EGWResetFieldsA.java", seChecks());
-    JavaCheckVerifier.verify("src/test/java/org/sonar/java/resolve/targets/se/EGWResetFieldsB.java", seChecks());
+    SEJavaCheckVerifier.verify("src/test/java/org/sonar/java/resolve/targets/se/EGWResetFieldsA.java", seChecks());
+    SEJavaCheckVerifier.verify("src/test/java/org/sonar/java/resolve/targets/se/EGWResetFieldsB.java", seChecks());
   }
 
   @Test
