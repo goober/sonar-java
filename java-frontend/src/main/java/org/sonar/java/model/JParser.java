@@ -62,6 +62,7 @@ import org.eclipse.jdt.core.dom.ExpressionMethodReference;
 import org.eclipse.jdt.core.dom.ExpressionStatement;
 import org.eclipse.jdt.core.dom.FieldAccess;
 import org.eclipse.jdt.core.dom.FieldDeclaration;
+import org.eclipse.jdt.core.dom.FileASTRequestor;
 import org.eclipse.jdt.core.dom.ForStatement;
 import org.eclipse.jdt.core.dom.IBinding;
 import org.eclipse.jdt.core.dom.IExtendedModifier;
@@ -137,6 +138,7 @@ import org.eclipse.jdt.internal.compiler.parser.TerminalTokens;
 import org.eclipse.jdt.internal.formatter.DefaultCodeFormatterOptions;
 import org.eclipse.jdt.internal.formatter.Token;
 import org.eclipse.jdt.internal.formatter.TokenManager;
+import org.sonar.api.batch.fs.InputFile;
 import org.sonar.api.utils.log.Logger;
 import org.sonar.api.utils.log.Loggers;
 import org.sonar.java.ast.parser.ArgumentListTreeImpl;
@@ -237,13 +239,159 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.function.BiConsumer;
+import java.util.function.BooleanSupplier;
 
 @ParametersAreNonnullByDefault
 public class JParser {
 
+  private static final boolean USE_BATCH = Boolean.getBoolean("sonar.java.internal.ecj.batch");
+
   private static final Logger LOG = Loggers.get(JParser.class);
 
   public static final String MAXIMUM_SUPPORTED_JAVA_VERSION = "13";
+
+  public static class Result {
+    private final Exception e;
+    private final CompilationUnitTree t;
+
+    Result(Exception e) {
+      this.e = e;
+      this.t = null;
+    }
+
+    Result(CompilationUnitTree t) {
+      this.e = null;
+      this.t = t;
+    }
+
+    public CompilationUnitTree get() throws Exception {
+      if (e != null) {
+        throw e;
+      }
+      return t;
+    }
+  }
+
+  /**
+   * Performs the given action until all inputs have been processed or the action throws an exception.
+   * Exceptions thrown by the action are relayed to the caller.
+   */
+  public static void parse(
+    String version,
+    List<File> classpath,
+    Iterable<InputFile> inputFiles,
+    BooleanSupplier isCanceled,
+    boolean batch,
+    BiConsumer<InputFile, Result> action
+  ) {
+    if (batch && USE_BATCH) {
+      batch(
+        version,
+        classpath,
+        inputFiles,
+        isCanceled,
+        action
+      );
+      return;
+    }
+
+    for (InputFile inputFile : inputFiles) {
+      if (isCanceled.getAsBoolean()) {
+        break;
+      }
+      Result result;
+      try {
+        result = new Result(parse(
+          version,
+          inputFile.filename(),
+          inputFile.contents(),
+          classpath
+        ));
+      } catch (Exception e) {
+        result = new Result(e);
+      }
+      action.accept(inputFile, result);
+    }
+  }
+
+  /**
+   * Reads files from filesystem.
+   *
+   * @see #parse(String, List, Iterable, BooleanSupplier, boolean, BiConsumer)
+   */
+  private static void batch(
+    String version,
+    List<File> classpath,
+    Iterable<InputFile> inputFiles,
+    BooleanSupplier isCanceled,
+    BiConsumer<InputFile, Result> action
+  ) {
+    System.err.println("Using ECJ batch");
+
+    ASTParser astParser = createASTParser(version, classpath);
+
+    List<String> sourceFilePaths = new ArrayList<>();
+    List<String> encodings = new ArrayList<>();
+    Map<File, InputFile> inputs = new HashMap<>();
+    for (InputFile inputFile : inputFiles) {
+      String sourceFilePath = inputFile.absolutePath();
+      inputs.put(
+        new File(sourceFilePath),
+        inputFile
+      );
+      sourceFilePaths.add(sourceFilePath);
+      encodings.add(inputFile.charset().name());
+    }
+
+    astParser.createASTs(
+      sourceFilePaths.toArray(new String[0]),
+      encodings.toArray(new String[0]),
+      new String[0],
+      new FileASTRequestor() {
+        @Override
+        public void acceptAST(String sourceFilePath, CompilationUnit ast) {
+          InputFile inputFile = inputs.get(new File(sourceFilePath));
+          Result result;
+          try {
+            result = new Result(convert(
+              version,
+              inputFile.filename(),
+              inputFile.contents(),
+              ast
+            ));
+          } catch (Exception e) {
+            result = new Result(e);
+          }
+          action.accept(inputFile, result);
+        }
+      },
+      null
+    );
+  }
+
+  private static ASTParser createASTParser(
+    String version,
+    List<File> classpath
+  ) {
+    ASTParser astParser = ASTParser.newParser(AST.JLS13);
+    Map<String, String> options = new HashMap<>();
+    options.put(JavaCore.COMPILER_COMPLIANCE, version);
+    options.put(JavaCore.COMPILER_SOURCE, version);
+    if (MAXIMUM_SUPPORTED_JAVA_VERSION.equals(version)) {
+      options.put(JavaCore.COMPILER_PB_ENABLE_PREVIEW_FEATURES, "enabled");
+    }
+    astParser.setCompilerOptions(options);
+    astParser.setEnvironment(
+      classpath.stream().map(File::getAbsolutePath).toArray(String[]::new),
+      new String[]{},
+      new String[]{},
+      true
+    );
+    astParser.setResolveBindings(true);
+    astParser.setBindingsRecovery(true);
+    return astParser;
+  }
 
   /**
    * @param unitName see {@link ASTParser#setUnitName(String)}
@@ -255,26 +403,9 @@ public class JParser {
     String source,
     List<File> classpath
   ) {
-    ASTParser astParser = ASTParser.newParser(AST.JLS13);
-    Map<String, String> options = new HashMap<>();
-    options.put(JavaCore.COMPILER_COMPLIANCE, version);
-    options.put(JavaCore.COMPILER_SOURCE, version);
-    if (MAXIMUM_SUPPORTED_JAVA_VERSION.equals(version)) {
-      options.put(JavaCore.COMPILER_PB_ENABLE_PREVIEW_FEATURES, "enabled");
-    }
+    ASTParser astParser = createASTParser(version, classpath);
 
-    astParser.setCompilerOptions(options);
-
-    astParser.setEnvironment(
-      classpath.stream().map(File::getAbsolutePath).toArray(String[]::new),
-      new String[]{},
-      new String[]{},
-      true
-    );
     astParser.setUnitName(unitName);
-
-    astParser.setResolveBindings(true);
-    astParser.setBindingsRecovery(true);
 
     char[] sourceChars = source.toCharArray();
     astParser.setSource(sourceChars);
@@ -286,10 +417,20 @@ public class JParser {
       LOG.error("ECJ: Unable to parse file", e);
       throw new RecognitionException(-1, "ECJ: Unable to parse file.", e);
     }
+    return convert(version, unitName, source, astNode);
+  }
+
+  private static CompilationUnitTree convert(
+    String version,
+    String unitName,
+    String source,
+    CompilationUnit astNode
+  ) {
     for (IProblem problem : astNode.getProblems()) {
       if (!problem.isError()) {
         continue;
       }
+      System.err.println(problem.getSourceLineNumber() + " : " + problem.getMessage());
       if ((problem.getID() & IProblem.Syntax) == 0) {
         // TODO logging semantic error?
         continue;
@@ -302,7 +443,7 @@ public class JParser {
     JParser converter = new JParser();
     converter.sema = new JSema(astNode.getAST());
     converter.compilationUnit = astNode;
-    converter.tokenManager = new TokenManager(lex(version, unitName, sourceChars), source, new DefaultCodeFormatterOptions(new HashMap<>()));
+    converter.tokenManager = new TokenManager(lex(version, unitName, source.toCharArray()), source, new DefaultCodeFormatterOptions(new HashMap<>()));
 
     JavaTree.CompilationUnitTreeImpl tree = converter.convertCompilationUnit(astNode);
     tree.sema = converter.sema;
